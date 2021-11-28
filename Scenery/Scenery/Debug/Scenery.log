@@ -1,0 +1,4 @@
+﻿  glad.c
+  main.cpp
+C:\Users\SI\Documents\GitHub\scenery\Scenery\Scenery\main.cpp(56,20): warning C4305: 'initializing': truncation from 'double' to 'float'
+  Scenery.vcxproj -> C:\Users\SI\Documents\GitHub\scenery\Scenery\Debug\Scenery.exe

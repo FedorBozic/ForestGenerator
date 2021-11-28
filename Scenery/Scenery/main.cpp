@@ -1,0 +1,290 @@
+#include<iostream>
+#include <glad/glad.h>
+#include <GLFW/glfw3.h>
+#include <vector>
+
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+
+#define _USE_MATH_DEFINES
+#include <math.h>
+
+#define SCR_WIDTH 800
+#define SCR_HEIGHT 600
+
+using namespace std;
+
+void framebuffer_size_callback(GLFWwindow* window, int width, int height)
+{
+    glViewport(0, 0, width, height);
+}
+
+
+void processInput(GLFWwindow* window)
+{
+    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+        glfwSetWindowShouldClose(window, true);
+}
+
+const char* vertexShaderSource = "#version 330 core\n"
+"layout (location = 0) in vec3 aPos;\n"
+"void main()\n"
+"{\n"
+"   gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);\n"
+"}\0";
+
+const char* fragmentShaderSource = "#version 330 core\n"
+"out vec4 FragColor;\n"
+"void main()\n"
+"{\n"
+"   FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);\n"
+"}\0";
+
+struct Object {
+    vector<float> vertices;
+    vector<unsigned> indices;
+};
+
+struct Point {
+    float x;
+    float y;
+    float z;
+};
+
+void setupHalfShpere(Object& sphere, float r, int detail, bool top) {
+    float pi = M_PI;
+    float step = 2 * pi / detail;
+    int dir = 1;
+    int startPoint = 0;
+    if (!top) {
+        dir = -1;
+        startPoint = sphere.vertices.size() / 3;
+    }
+    for (int i = 0; i < ceil(((float)detail) / 2) - 1; i++) {
+        if (!top && i == 0)
+            continue;
+        for (int j = 0; j < detail; j++) {
+
+            float pitch = i * step;
+            float tetha = j * step;
+
+            float x = cos(tetha) * r * cos(pitch);
+            float y = sin(tetha) * r * cos(pitch);
+            float z = sin(pitch) * r * dir;
+
+            sphere.vertices.push_back(x);
+            sphere.vertices.push_back(y);
+            sphere.vertices.push_back(z);
+        }
+        if (i > 0) {
+            int t1, t2, t3, t4;
+            for (int j = 0; j < detail; j++) {
+                t1 = startPoint + ((i - 1) * detail + j);
+                t2 = startPoint + ((i - 1) * detail + ((j + 1) % detail));
+                t3 = startPoint + (i * detail + j);
+                t4 = startPoint + (i * detail + ((j + 1) % detail));
+
+                cout << "[" << t1 << ", " << t2 << ", " << t3 << "], ";
+                cout << "[" << t2 << ", " << t3 << ", " << t4 << "]" << endl;
+
+                sphere.indices.push_back(t1);
+                sphere.indices.push_back(t2);
+                sphere.indices.push_back(t3);
+                sphere.indices.push_back(t2);
+                sphere.indices.push_back(t3);
+                sphere.indices.push_back(t4);
+            }
+        }
+    }
+    bool drawTop = true;
+    if (drawTop) {
+        sphere.vertices.push_back(0);
+        sphere.vertices.push_back(0);
+        sphere.vertices.push_back(r * dir);
+        int topi = detail / 2 - 1;
+        for (int i = 0; i < detail; i++) {
+            int t1 = startPoint + ((topi - 1) * detail + i);
+            int t2 = startPoint + ((topi - 1) * detail + ((i + 1) % detail));
+            int t3 = sphere.vertices.size() / 3;
+            sphere.indices.push_back(t1);
+            sphere.indices.push_back(t2);
+            sphere.indices.push_back(t3);
+            cout << "[" << t1 << ", " << t2 << ", " << t3 << "]" << endl;
+        }
+        cout << topi << endl;
+    }
+}
+
+Object createSphere(float r) {
+    int detail = 10;
+    //float pi = 3.1416f;
+    Object sphere;
+
+    setupHalfShpere(sphere, r, detail, true);
+    //setupHalfShpere(sphere, r, detail, false);
+    
+    return sphere;
+}
+
+Object generateTerrain(int size) {
+    Object terrain;
+    float scale = 10;
+    float step = scale / size;
+    for (int i = 0; i < size; i++) {
+        for (int j = 0; j < size; j++) {
+            terrain.vertices.push_back(j * step);
+            terrain.vertices.push_back(i * step);
+            terrain.vertices.push_back(0);
+        }
+
+        if (i > 0) {
+            int t1, t2, t3, t4;
+            for (int j = 0; j < size - 1; j++) {
+                t1 = ((i - 1) * size + j);
+                t2 = ((i - 1) * size + (j + 1));
+                t3 = (i * size + j);
+                t4 = (i * size + (j + 1));
+
+                cout << "[" << t1 << ", " << t2 << ", " << t3 << "], ";
+                cout << "[" << t2 << ", " << t3 << ", " << t4 << "]" << endl;
+
+                terrain.indices.push_back(t1);
+                terrain.indices.push_back(t2);
+                terrain.indices.push_back(t3);
+                terrain.indices.push_back(t2);
+                terrain.indices.push_back(t3);
+                terrain.indices.push_back(t4);
+            }
+        }
+    }
+    return terrain;
+}
+
+Object sphere;
+Object terrain = generateTerrain(10);
+
+unsigned initRender() {
+    vector<float> vertices = terrain.vertices;
+    vector<unsigned> indices = terrain.indices;
+
+    unsigned int VAO;
+    glGenVertexArrays(1, &VAO);
+    unsigned int EBO;
+    glGenBuffers(1, &EBO);
+    unsigned int VBO;
+    glGenBuffers(1, &VBO);
+
+    // 1. bind Vertex Array Object
+    glBindVertexArray(VAO);
+    // 2. copy our vertices array in a vertex buffer for OpenGL to use
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(vertices), vertices.data(), GL_STATIC_DRAW);
+    // 3. copy our index array in a element buffer for OpenGL to use
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(indices), indices.data(), GL_STATIC_DRAW);
+    // 4. then set the vertex attributes pointers
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindVertexArray(0);
+
+    return VAO;
+}
+
+unsigned initShader() {
+    unsigned int vertexShader;
+    vertexShader = glCreateShader(GL_VERTEX_SHADER);
+    glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
+    glCompileShader(vertexShader);
+
+    int success;
+    char infoLog[512];
+    glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
+
+    if (!success) {
+        glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
+        std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << std::endl;
+    }
+
+    unsigned int fragmentShader;
+    fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+    glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
+    glCompileShader(fragmentShader);
+
+    unsigned int shaderProgram;
+    shaderProgram = glCreateProgram();
+
+    glAttachShader(shaderProgram, vertexShader);
+    glAttachShader(shaderProgram, fragmentShader);
+    glLinkProgram(shaderProgram);
+
+    //Optional check success
+
+    glDeleteShader(vertexShader);
+    glDeleteShader(fragmentShader);
+
+    return shaderProgram;
+}
+
+int main() {
+    glfwInit();
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    //glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+    
+    GLFWwindow* window = glfwCreateWindow(800, 600, "LearnOpenGL", NULL, NULL);
+    if (window == NULL) {
+        std::cout << "Failed to create GLFW window" << std::endl;
+        glfwTerminate();
+        return -1;
+    }
+    glfwMakeContextCurrent(window);
+
+    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
+        std::cout << "Failed to initialize GLAD" << std::endl;
+        return -1;
+    }
+
+    glViewport(0, 0, 800, 600);
+
+    glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+
+    glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT);
+
+    vector<float> vertices = terrain.vertices;
+    vector<unsigned> indices = terrain.indices;
+
+    unsigned shaderProgram = initShader();
+    unsigned VAO = initRender();
+
+    while (!glfwWindowShouldClose(window)) {
+        processInput(window);
+
+        glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT);
+
+        glUseProgram(shaderProgram);
+
+        glm::mat4 model = glm::mat4(1.0f); // make sure to initialize matrix to identity matrix first
+        glm::mat4 view = glm::mat4(1.0f);
+        glm::mat4 projection = glm::mat4(1.0f);
+        model = glm::rotate(model, glm::radians(-55.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+        view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
+        projection = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+        shaderProgram.setMat4("projection", projection);
+
+        glBindVertexArray(VAO);
+        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+        glDrawElements(GL_TRIANGLES, indices.size() * 3, GL_UNSIGNED_INT, 0);
+
+        glfwSwapBuffers(window);
+        glfwPollEvents();
+    }
+
+    glfwTerminate();
+	return 0;
+}
