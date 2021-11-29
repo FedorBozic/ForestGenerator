@@ -9,6 +9,7 @@
 
 #define _USE_MATH_DEFINES
 #include <math.h>
+#include "Shader.h"
 
 #define SCR_WIDTH 800
 #define SCR_HEIGHT 600
@@ -28,11 +29,17 @@ void processInput(GLFWwindow* window)
 }
 
 const char* vertexShaderSource = "#version 330 core\n"
-"layout (location = 0) in vec3 aPos;\n"
+"layout(location = 0) in vec3 aPos;\n"
+"layout(location = 1) in vec2 aTexCoord;\n"
+"out vec2 TexCoord;\n"
+"uniform mat4 model;\n"
+"uniform mat4 view;\n"
+"uniform mat4 projection;\n"
 "void main()\n"
 "{\n"
-"   gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);\n"
-"}\0";
+"    gl_Position = projection * view * model * vec4(aPos, 1.0f);\n"
+"    TexCoord = vec2(aTexCoord.x, 1.0 - aTexCoord.y);\n"
+"};\n";
 
 const char* fragmentShaderSource = "#version 330 core\n"
 "out vec4 FragColor;\n"
@@ -248,6 +255,7 @@ int main() {
         return -1;
     }
 
+    Shader shader(vertexShaderSource, fragmentShaderSource);
     glViewport(0, 0, 800, 600);
 
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
@@ -261,6 +269,8 @@ int main() {
     unsigned shaderProgram = initShader();
     unsigned VAO = initRender();
 
+    shader.use();
+
     while (!glfwWindowShouldClose(window)) {
         processInput(window);
 
@@ -268,16 +278,28 @@ int main() {
         glClear(GL_COLOR_BUFFER_BIT);
 
         glUseProgram(shaderProgram);
+        shader.use();
 
-        glm::mat4 model = glm::mat4(1.0f); // make sure to initialize matrix to identity matrix first
-        glm::mat4 view = glm::mat4(1.0f);
+        glm::mat4 view = glm::mat4(1.0f); // make sure to initialize matrix to identity matrix first
         glm::mat4 projection = glm::mat4(1.0f);
-        model = glm::rotate(model, glm::radians(-55.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-        view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
         projection = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
-        shaderProgram.setMat4("projection", projection);
+
+        const float radius = 10.0f;
+        float camX = sin(glfwGetTime()) * radius;
+        float camZ = cos(glfwGetTime()) * radius;
+        view = glm::lookAt(glm::vec3(camX, 0.0, camZ), glm::vec3(0.0, 0.0, 0.0), glm::vec3(0.0, 1.0, 0.0));
+
+        // pass transformation matrices to the shader
+        shader.setMat4("projection", projection); // note: currently we set the projection matrix each frame, but since the projection matrix rarely changes it's often best practice to set it outside the main loop only once.
+        shader.setMat4("view", view);
 
         glBindVertexArray(VAO);
+
+        glm::mat4 model = glm::mat4(1.0f);
+        float angle = 20.0f;
+        model = glm::rotate(model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
+        shader.setMat4("model", model);
+
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
         glDrawElements(GL_TRIANGLES, indices.size() * 3, GL_UNSIGNED_INT, 0);
 
