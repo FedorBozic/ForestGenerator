@@ -142,7 +142,7 @@ Object generateTerrain(int size) {
         for (int j = 0; j < size; j++) {
             terrain.vertices.push_back(j * step);
             terrain.vertices.push_back(i * step);
-            terrain.vertices.push_back(0);
+            terrain.vertices.push_back(rand() % 10 * step / 4);
         }
 
         if (i > 0) {
@@ -169,7 +169,7 @@ Object generateTerrain(int size) {
 }
 
 Object sphere;
-Object terrain = generateTerrain(10);
+Object terrain = generateTerrain(20);
 
 unsigned initRender() {
     vector<float> vertices = terrain.vertices;
@@ -186,10 +186,10 @@ unsigned initRender() {
     glBindVertexArray(VAO);
     // 2. copy our vertices array in a vertex buffer for OpenGL to use
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(vertices), vertices.data(), GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_STATIC_DRAW); //sizeof vertices
     // 3. copy our index array in a element buffer for OpenGL to use
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(indices), indices.data(), GL_STATIC_DRAW);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned), indices.data(), GL_STATIC_DRAW); //sizeof indices
     // 4. then set the vertex attributes pointers
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
@@ -237,8 +237,8 @@ unsigned initShader() {
 
 int main() {
     glfwInit();
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     //glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
     
@@ -284,10 +284,11 @@ int main() {
         glm::mat4 projection = glm::mat4(1.0f);
         projection = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
 
-        const float radius = 10.0f;
-        float camX = sin(glfwGetTime()) * radius;
-        float camZ = cos(glfwGetTime()) * radius;
-        view = glm::lookAt(glm::vec3(camX, 0.0, camZ), glm::vec3(0.0, 0.0, 0.0), glm::vec3(0.0, 1.0, 0.0));
+        const float radius = 20.0f;
+        const float rotSpd = 0.2;
+        float camX = sin(glfwGetTime() * rotSpd) * radius;
+        float camY = cos(glfwGetTime() * rotSpd) * radius;
+        view = glm::lookAt(glm::vec3(camX, camY, 20.0), glm::vec3(5.0, 5.0, 0.0), glm::vec3(0.0, 0.0, 1.0));
 
         // pass transformation matrices to the shader
         shader.setMat4("projection", projection); // note: currently we set the projection matrix each frame, but since the projection matrix rarely changes it's often best practice to set it outside the main loop only once.
