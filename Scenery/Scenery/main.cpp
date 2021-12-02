@@ -9,7 +9,12 @@
 
 #define _USE_MATH_DEFINES
 #include <math.h>
+
+#include <iostream>
+#include <cstring>
+
 #include "Shader.h"
+#include "Model.h"
 
 #define SCR_WIDTH 800
 #define SCR_HEIGHT 600
@@ -130,7 +135,7 @@ Object createSphere(float r) {
 
     setupHalfShpere(sphere, r, detail, true);
     //setupHalfShpere(sphere, r, detail, false);
-    
+
     return sphere;
 }
 
@@ -241,7 +246,7 @@ int main() {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     //glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-    
+
     GLFWwindow* window = glfwCreateWindow(800, 600, "LearnOpenGL", NULL, NULL);
     if (window == NULL) {
         std::cout << "Failed to create GLFW window" << std::endl;
@@ -266,6 +271,9 @@ int main() {
     vector<float> vertices = terrain.vertices;
     vector<unsigned> indices = terrain.indices;
 
+    string str_obj = "C:/Users/fedor/OneDrive/Desktop/RG/scenery/Scenery/resources/tree/Tree.obj";
+    Model ourModel(&str_obj[0]);
+
     unsigned shaderProgram = initShader();
     unsigned VAO = initRender();
 
@@ -280,34 +288,35 @@ int main() {
         glUseProgram(shaderProgram);
         shader.use();
 
+        glm::mat4 model = glm::mat4(1.0f);
+        float angle = 20.0f;
+        model = glm::rotate(model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
+        shader.setMat4("model", model);
+        ourModel.Draw(shader);
+
+        glBindVertexArray(VAO);
+        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+        glDrawElements(GL_TRIANGLES, indices.size() * 3, GL_UNSIGNED_INT, 0);
+
         glm::mat4 view = glm::mat4(1.0f); // make sure to initialize matrix to identity matrix first
         glm::mat4 projection = glm::mat4(1.0f);
         projection = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
 
-        const float radius = 20.0f;
-        const float rotSpd = 0.2;
-        float camX = sin(glfwGetTime() * rotSpd) * radius;
-        float camY = cos(glfwGetTime() * rotSpd) * radius;
-        view = glm::lookAt(glm::vec3(camX, camY, 20.0), glm::vec3(5.0, 5.0, 0.0), glm::vec3(0.0, 0.0, 1.0));
+        const float radius = 10.0f;
+        float camX = sin(glfwGetTime()) * radius;
+        float camZ = cos(glfwGetTime()) * radius;
+        view = glm::lookAt(glm::vec3(camX, 0.0, camZ), glm::vec3(0.0, 0.0, 0.0), glm::vec3(0.0, 1.0, 0.0));
 
         // pass transformation matrices to the shader
         shader.setMat4("projection", projection); // note: currently we set the projection matrix each frame, but since the projection matrix rarely changes it's often best practice to set it outside the main loop only once.
         shader.setMat4("view", view);
 
-        glBindVertexArray(VAO);
-
-        glm::mat4 model = glm::mat4(1.0f);
-        float angle = 20.0f;
-        model = glm::rotate(model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
-        shader.setMat4("model", model);
-
-        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-        glDrawElements(GL_TRIANGLES, indices.size() * 3, GL_UNSIGNED_INT, 0);
+        projection = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
 
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
 
     glfwTerminate();
-	return 0;
+    return 0;
 }
