@@ -27,7 +27,7 @@ class Model
         Model(Mesh meshes);
         std::vector<Texture> textures_loaded;
 
-        void Draw(Shader& shader);
+        void Draw(Shader& shader, DrawingMode drawingMode = DRAWING_MODE_STANDARD);
     private:
         std::vector<Mesh> meshes;
         std::string directory;

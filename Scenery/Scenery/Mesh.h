@@ -25,6 +25,11 @@ struct Texture {
     std::string path;
 };
 
+enum DrawingMode {
+    DRAWING_MODE_STANDARD,
+    DRAWING_MODE_WIREFRAME
+};
+
 class Mesh
 {
     public:
@@ -34,7 +39,7 @@ class Mesh
 
         Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, std::vector<Texture> textures);
 
-        void Draw(Shader& shader);
+        void Draw(Shader& shader, DrawingMode drawingMode = DRAWING_MODE_STANDARD);
     private:
         unsigned int VAO, VBO, EBO;
 

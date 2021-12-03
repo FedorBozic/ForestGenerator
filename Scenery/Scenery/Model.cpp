@@ -13,10 +13,10 @@ Model::Model(Mesh mesh)
     meshes.push_back(mesh);
 }
 
-void Model::Draw(Shader& shader)
+void Model::Draw(Shader& shader, DrawingMode drawingMode)
 {
     for (unsigned int i = 0; i < meshes.size(); i++)
-        meshes[i].Draw(shader);
+        meshes[i].Draw(shader, drawingMode);
 }
 
 void Model::loadModel(std::string path)

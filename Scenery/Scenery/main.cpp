@@ -173,7 +173,6 @@ int main() {
     Model treeModel(&str_obj[0]);
 
     unsigned shaderProgram = initShader();
-    //unsigned VAO = initRender();
 
     shader.use();
 
@@ -186,11 +185,7 @@ int main() {
         glUseProgram(shaderProgram);
 
         treeModel.Draw(shader);
-        surfaceModel.Draw(shader);
-
-        /*glBindVertexArray(VAO);
-        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-        glDrawElements(GL_TRIANGLES, indices.size() * 3, GL_UNSIGNED_INT, 0);*/
+        surfaceModel.Draw(shader, DRAWING_MODE_WIREFRAME);
 
         glm::mat4 model = glm::mat4(1.0f);
         glm::mat4 projection = glm::mat4(1.0f);
