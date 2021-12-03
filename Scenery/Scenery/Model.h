@@ -30,6 +30,7 @@ class Model
 
         void Draw(Shader& shader, DrawingMode drawingMode = DRAWING_MODE_STANDARD);
         void Translate(float xCoord, float yCoord, float zCoord);
+        void RemoveSurfacePlanes();
 
         Vertex GetRandomVertex();
     private:

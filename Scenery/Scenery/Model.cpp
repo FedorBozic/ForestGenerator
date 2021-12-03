@@ -29,7 +29,7 @@ void Model::Draw(Shader& shader, DrawingMode drawingMode)
 void Model::loadModel(std::string path)
 {
     Assimp::Importer import;
-    const aiScene* scene = import.ReadFile(path, aiProcess_Triangulate | aiProcess_FlipUVs);
+    const aiScene* scene = import.ReadFile(path, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_GenNormals);
 
     if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode)
     {
@@ -152,6 +152,17 @@ void Model::Translate(float xCoord, float yCoord, float zCoord)
 {
     for (int i = 0; i < meshes.size(); i++)
         meshes[i].Translate(xCoord, yCoord, zCoord);
+}
+
+void Model::RemoveSurfacePlanes()
+{
+    for (int i = 0; i < meshes.size(); i++)
+    {
+        if (meshes[i].vertices.size() <= 4)
+        {
+            meshes.erase(meshes.begin() + i);
+        }
+    }
 }
 
 Vertex Model::GetRandomVertex()

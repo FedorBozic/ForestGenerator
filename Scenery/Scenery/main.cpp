@@ -188,6 +188,11 @@ int main() {
     Model treeModel(&str_obj[0]);
     vector<Model> treeModels = getScatteredModelsAcrossSurface(surfaceModel, treeModel, 5);
 
+    string rock_obj_path = "C:/Users/fedor/OneDrive/Desktop/RG/scenery/Scenery/resources/rock1/Rock1.obj";
+    Model rockModel(&rock_obj_path[0]);
+    rockModel.RemoveSurfacePlanes();
+    vector<Model> rockModels = getScatteredModelsAcrossSurface(surfaceModel, rockModel, 10);
+
     unsigned shaderProgram = initShader();
 
     shader.use();
@@ -205,6 +210,11 @@ int main() {
         {
             treeModels[i].Draw(shader);
         }
+        rockModel.Draw(shader);
+        for (int i = 0; i < rockModels.size(); i++)
+        {
+            rockModels[i].Draw(shader);
+        }
         surfaceModel.Draw(shader);
 
         glm::mat4 model = glm::mat4(1.0f);
@@ -215,7 +225,7 @@ int main() {
 
         float camX = sin(glfwGetTime()) * ROTATION_RADIUS;
         float camZ = cos(glfwGetTime()) * ROTATION_RADIUS;
-        view = glm::lookAt(glm::vec3(camX, 0.0, camZ), glm::vec3(0.0, 0.0, 0.0), glm::vec3(0.0, 1.0, 0.0));
+        view = glm::lookAt(glm::vec3(camX, 3.0, camZ), glm::vec3(0.0, 0.0, 0.0), glm::vec3(0.0, 1.0, 0.0));
 
         shader.setMat4("model", model);
         shader.setMat4("projection", projection);
