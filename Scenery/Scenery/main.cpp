@@ -141,15 +141,20 @@ int main() {
 
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
+    glEnable(GL_DEPTH_TEST);
+    glDepthMask(GL_TRUE);
+    glDepthFunc(GL_LEQUAL);
+    glDepthRange(0.0f, 1.0f);
+
     glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     Terrain terrain(perlinResolution, scale);
     Mesh terrainMesh = terrain.generateTerrain(maxHeight, smoothness, seed);
     Model surfaceModel(terrainMesh);
     surfaceModel.Translate(0.0f, 0.0f, 0.0f);
 
-    string str_obj = "C:/Users/SI/Documents/GitHub/scenery/Scenery/resources/tree/Tree.obj";
+    string str_obj = "C:/Users/fedor/OneDrive/Desktop/RG/scenery/Scenery/resources/tree/Tree.obj";
     Model treeModel(&str_obj[0]);
     vector<Model> treeModels = getScatteredModelsAcrossSurface(surfaceModel, treeModel, 5);
 
@@ -167,10 +172,12 @@ int main() {
         processInput(window);
 
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
 
         glUseProgram(shaderProgram);
 
+        surfaceModel.Draw(shader);
         treeModel.Draw(shader);
         for (int i = 0; i < treeModels.size(); i++)
         {
@@ -181,7 +188,6 @@ int main() {
         {
             rockModels[i].Draw(shader);
         }
-        surfaceModel.Draw(shader);
 
         glm::mat4 model = glm::mat4(1.0f);
         glm::mat4 projection = glm::mat4(1.0f);
