@@ -29,8 +29,10 @@ class Model
         std::vector<Texture> textures_loaded;
 
         void Draw(Shader& shader, DrawingMode drawingMode = DRAWING_MODE_STANDARD);
-        void Translate(float xCoord, float yCoord, float zCoord);
         void RemoveSurfacePlanes();
+
+        void Translate(float xCoord, float yCoord, float zCoord);
+        void Scale(float scale);
 
         Vertex GetRandomVertex();
     private:

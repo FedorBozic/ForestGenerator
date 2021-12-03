@@ -154,6 +154,12 @@ void Model::Translate(float xCoord, float yCoord, float zCoord)
         meshes[i].Translate(xCoord, yCoord, zCoord);
 }
 
+void Model::Scale(float scale)
+{
+    for (int i = 0; i < meshes.size(); i++)
+        meshes[i].Scale(scale);
+}
+
 void Model::RemoveSurfacePlanes()
 {
     for (int i = 0; i < meshes.size(); i++)

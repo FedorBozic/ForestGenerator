@@ -82,3 +82,19 @@ void Mesh::Translate(float xCoord, float yCoord, float zCoord)
     }
     setupMesh();
 }
+
+void Mesh::Scale(float scale)
+{
+    for (unsigned i = 0; i < vertices.size(); i++)
+    {
+        glm::vec4 vec(vertices[i].Position.x, vertices[i].Position.y, vertices[i].Position.z, 1.0f);
+        glm::mat4 scaleMatrix = glm::mat4(1.0f);
+        scaleMatrix = glm::scale(scaleMatrix, glm::vec3(scale, scale, scale));
+        vec = scaleMatrix * vec;
+
+        vertices[i].Position.x = vec[0];
+        vertices[i].Position.y = vec[1];
+        vertices[i].Position.z = vec[2];
+    }
+    setupMesh();
+}
