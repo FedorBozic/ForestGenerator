@@ -68,41 +68,6 @@ const float smoothness = 10;
 const int perlinResolution = 32; //256
 const float maxHeight = 4;
 
-unsigned initShader() {
-    unsigned int vertexShader;
-    vertexShader = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
-    glCompileShader(vertexShader);
-
-    int success;
-    char infoLog[512];
-    glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
-
-    if (!success) {
-        glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
-        std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << std::endl;
-    }
-
-    unsigned int fragmentShader;
-    fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
-    glCompileShader(fragmentShader);
-
-    unsigned int shaderProgram;
-    shaderProgram = glCreateProgram();
-
-    glAttachShader(shaderProgram, vertexShader);
-    glAttachShader(shaderProgram, fragmentShader);
-    glLinkProgram(shaderProgram);
-
-    //Optional check success
-
-    glDeleteShader(vertexShader);
-    glDeleteShader(fragmentShader);
-
-    return shaderProgram;
-}
-
 vector<Model> getScatteredModelsAcrossSurface(Model surface, Model objectTemplate, unsigned int count)
 {
     vector<Model> result;
@@ -167,8 +132,6 @@ int main() {
     rockModel.Scale(0.2f);
     vector<Model> rockModels = getScatteredModelsAcrossSurface(surfaceModel, rockModel, 10);
 
-    unsigned shaderProgram = initShader();
-
     shader.use();
 
     while (!glfwWindowShouldClose(window)) {
@@ -176,9 +139,6 @@ int main() {
 
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-
-        glUseProgram(shaderProgram);
 
         surfaceModel.Draw(shader);
         treeModel.Draw(shader);
