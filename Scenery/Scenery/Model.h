@@ -28,6 +28,7 @@ class Model
         std::vector<Texture> textures_loaded;
 
         void Draw(Shader& shader, DrawingMode drawingMode = DRAWING_MODE_STANDARD);
+        void Translate(float xCoord, float yCoord, float zCoord);
     private:
         std::vector<Mesh> meshes;
         std::string directory;

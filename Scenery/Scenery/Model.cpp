@@ -141,6 +141,12 @@ std::vector<Texture> Model::loadMaterialTextures(aiMaterial* mat, aiTextureType 
     return textures;
 }
 
+void Model::Translate(float xCoord, float yCoord, float zCoord)
+{
+    for (int i = 0; i < meshes.size(); i++)
+        meshes[i].Translate(xCoord, yCoord, zCoord);
+}
+
 unsigned int TextureFromFile(const char* path, const std::string& directory, bool gamma)
 {
     std::string filename = std::string(path);

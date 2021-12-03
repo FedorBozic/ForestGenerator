@@ -40,6 +40,7 @@ class Mesh
         Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, std::vector<Texture> textures);
 
         void Draw(Shader& shader, DrawingMode drawingMode = DRAWING_MODE_STANDARD);
+        void Translate(float xCoord, float yCoord, float zCoord);
     private:
         unsigned int VAO, VBO, EBO;
 

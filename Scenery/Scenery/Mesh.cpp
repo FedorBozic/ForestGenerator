@@ -1,4 +1,5 @@
 #include "Mesh.h"
+#include <glm/ext/matrix_transform.hpp>
 
 Mesh::Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, std::vector<Texture> textures)
 {
@@ -13,6 +14,7 @@ void Mesh::Draw(Shader& shader, DrawingMode drawingMode)
 {
     unsigned int diffuseNr = 1;
     unsigned int specularNr = 1;
+
     for (unsigned int i = 0; i < textures.size(); i++)
     {
         glActiveTexture(GL_TEXTURE0 + i); // activate proper texture unit before binding
@@ -63,4 +65,20 @@ void Mesh::setupMesh()
     glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, TexCoords));
 
     glBindVertexArray(0);
+}
+
+void Mesh::Translate(float xCoord, float yCoord, float zCoord)
+{
+    for (unsigned i = 0; i < vertices.size(); i++)
+    {
+        glm::vec4 vec(vertices[i].Position.x, vertices[i].Position.y, vertices[i].Position.z, 1.0f);
+        glm::mat4 translationMatrix = glm::mat4(1.0f);
+        translationMatrix = glm::translate(translationMatrix, glm::vec3(xCoord, yCoord, zCoord));
+        vec = translationMatrix * vec;
+
+        vertices[i].Position.x = vec[0];
+        vertices[i].Position.y = vec[1];
+        vertices[i].Position.z = vec[2];
+    }
+    setupMesh();
 }

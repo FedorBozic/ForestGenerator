@@ -138,6 +138,14 @@ unsigned initShader() {
     return shaderProgram;
 }
 
+/*void scatterModelsAcrossSurface(Model surface, Model objectTemplate, unsigned int count)
+{
+    for (unsigned int i = 0; i < count; i++)
+    {
+        int randomIndex = rand() % surface.meshes.front().vertices.size();
+    }
+}*/
+
 int main() {
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -168,6 +176,7 @@ int main() {
 
     Mesh terrain = generateTerrain(20);
     Model surfaceModel(terrain);
+    surfaceModel.Translate(-5.0f, 0.0f, -5.0f);
 
     string str_obj = "C:/Users/fedor/OneDrive/Desktop/RG/scenery/Scenery/resources/tree/Tree.obj";
     Model treeModel(&str_obj[0]);
@@ -185,7 +194,7 @@ int main() {
         glUseProgram(shaderProgram);
 
         treeModel.Draw(shader);
-        surfaceModel.Draw(shader, DRAWING_MODE_WIREFRAME);
+        surfaceModel.Draw(shader);
 
         glm::mat4 model = glm::mat4(1.0f);
         glm::mat4 projection = glm::mat4(1.0f);
