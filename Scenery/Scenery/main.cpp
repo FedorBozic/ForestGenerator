@@ -122,11 +122,13 @@ int main() {
     Model surfaceModel(terrainMesh);
     surfaceModel.Translate(0.0f, 0.0f, 0.0f);
 
-    string str_obj = "C:/Users/fedor/OneDrive/Desktop/RG/scenery/Scenery/resources/tree/Tree.obj";
+    string igor = "C:/Users/SI/Documents/GitHub/";
+    string fedor = "C:/Users/fedor/OneDrive/Desktop/RG/";
+    string str_obj = igor + "scenery/Scenery/resources/tree/Tree.obj";
     Model treeModel(&str_obj[0]);
     vector<Model> treeModels = getScatteredModelsAcrossSurface(surfaceModel, treeModel, 5);
 
-    string rock_obj_path = "C:/Users/fedor/OneDrive/Desktop/RG/scenery/Scenery/resources/rock1/Rock1.obj";
+    string rock_obj_path = igor + "scenery/Scenery/resources/rock1/Rock1.obj";
     Model rockModel(&rock_obj_path[0]);
     rockModel.RemoveSurfacePlanes();
     rockModel.Scale(0.2f);

@@ -33,7 +33,6 @@ Mesh Terrain::generateTerrain(float maxHeight, float smoothness, unsigned seed) 
     }
     yOffset = noiseMinHeight;
     yFactor = maxHeight / (noiseMaxHeight - noiseMinHeight);
-    //yFactor = maxHeight / (255.0f * (noiseMaxHeight - noiseMinHeight));
 
     cout << yOffset << endl;
     cout << noiseMaxHeight << endl;
@@ -45,6 +44,8 @@ Mesh Terrain::generateTerrain(float maxHeight, float smoothness, unsigned seed) 
             newVertex.Position.x = j * step;
             newVertex.Position.y = getPerlinHeight(j, i);;
             newVertex.Position.z = i * step;
+            newVertex.TexCoords.x = ((float)j) / (float)resolution;
+            newVertex.TexCoords.y = 1.0 - ((float)i) / (float)resolution;
             vertices.push_back(newVertex);
         }
 
@@ -72,6 +73,7 @@ Mesh Terrain::generateTerrain(float maxHeight, float smoothness, unsigned seed) 
     Texture blankTexture;
     blankTexture.id = 0;
     blankTexture.type = "NO_TYPE";
+    //"scenery/Scenery/resources/tex_grass.png";
     blankTexture.path = "NO_PATH";
     textures.push_back(blankTexture);
 
@@ -94,5 +96,4 @@ float Terrain::getPerlinHeight(int j, int i) {
 float Terrain::calculateHeight(float x, float y) {
     float strength = maxHeight;// / 255.0f;
     return (float)((perlin->getNoise(x * scale, y * scale, 0.5) * strength) - yOffset) * yFactor;
-    //return (float)perlin->getNoise(x * scale, y * scale, 0.5) * strength;
 }
