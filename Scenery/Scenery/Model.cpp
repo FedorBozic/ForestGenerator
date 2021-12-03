@@ -3,6 +3,13 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb/stb_image.h>
 
+Model::Model(const Model& modelToCopy)
+{
+    meshes = modelToCopy.meshes;
+    directory = modelToCopy.directory;
+    textures_loaded = modelToCopy.textures_loaded;
+}
+
 Model::Model(char* path)
 {
     loadModel(path);
@@ -145,6 +152,12 @@ void Model::Translate(float xCoord, float yCoord, float zCoord)
 {
     for (int i = 0; i < meshes.size(); i++)
         meshes[i].Translate(xCoord, yCoord, zCoord);
+}
+
+Vertex Model::GetRandomVertex()
+{
+    int randomIndex = rand() % meshes.front().vertices.size();
+    return meshes.front().vertices[randomIndex];
 }
 
 unsigned int TextureFromFile(const char* path, const std::string& directory, bool gamma)

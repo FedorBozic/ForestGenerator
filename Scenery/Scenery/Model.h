@@ -23,12 +23,15 @@ unsigned int TextureFromFile(const char* path, const std::string& directory, boo
 class Model
 {
     public:
+        Model(const Model& modelToCopy);
         Model(char* path);
         Model(Mesh meshes);
         std::vector<Texture> textures_loaded;
 
         void Draw(Shader& shader, DrawingMode drawingMode = DRAWING_MODE_STANDARD);
         void Translate(float xCoord, float yCoord, float zCoord);
+
+        Vertex GetRandomVertex();
     private:
         std::vector<Mesh> meshes;
         std::string directory;

@@ -138,13 +138,19 @@ unsigned initShader() {
     return shaderProgram;
 }
 
-/*void scatterModelsAcrossSurface(Model surface, Model objectTemplate, unsigned int count)
+vector<Model> getScatteredModelsAcrossSurface(Model surface, Model objectTemplate, unsigned int count)
 {
+    vector<Model> result;
     for (unsigned int i = 0; i < count; i++)
     {
-        int randomIndex = rand() % surface.meshes.front().vertices.size();
+        Vertex randomVertex = surface.GetRandomVertex();
+
+        Model* newModel = new Model(objectTemplate);
+        newModel->Translate(randomVertex.Position.x, randomVertex.Position.y, randomVertex.Position.z);
+        result.push_back(*newModel);
     }
-}*/
+    return result;
+}
 
 int main() {
     glfwInit();
@@ -180,6 +186,7 @@ int main() {
 
     string str_obj = "C:/Users/fedor/OneDrive/Desktop/RG/scenery/Scenery/resources/tree/Tree.obj";
     Model treeModel(&str_obj[0]);
+    vector<Model> treeModels = getScatteredModelsAcrossSurface(surfaceModel, treeModel, 5);
 
     unsigned shaderProgram = initShader();
 
@@ -194,6 +201,10 @@ int main() {
         glUseProgram(shaderProgram);
 
         treeModel.Draw(shader);
+        for (int i = 0; i < treeModels.size(); i++)
+        {
+            treeModels[i].Draw(shader);
+        }
         surfaceModel.Draw(shader);
 
         glm::mat4 model = glm::mat4(1.0f);
