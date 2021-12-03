@@ -18,10 +18,14 @@
 #include <string>
 #include <vector>
 
+unsigned int TextureFromFile(const char* path, const std::string& directory, bool gamma = false);
+
 class Model
 {
     public:
         Model(char* path);
+        Model(Mesh meshes);
+        std::vector<Texture> textures_loaded;
 
         void Draw(Shader& shader);
     private:

@@ -19,6 +19,8 @@
 #define SCR_WIDTH 800
 #define SCR_HEIGHT 600
 
+#define ROTATION_RADIUS 20.0f
+
 using namespace std;
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height)
@@ -53,101 +55,21 @@ const char* fragmentShaderSource = "#version 330 core\n"
 "   FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);\n"
 "}\0";
 
-struct Object {
-    vector<float> vertices;
-    vector<unsigned> indices;
-};
-
-struct Point {
-    float x;
-    float y;
-    float z;
-};
-
-void setupHalfShpere(Object& sphere, float r, int detail, bool top) {
-    float pi = M_PI;
-    float step = 2 * pi / detail;
-    int dir = 1;
-    int startPoint = 0;
-    if (!top) {
-        dir = -1;
-        startPoint = sphere.vertices.size() / 3;
-    }
-    for (int i = 0; i < ceil(((float)detail) / 2) - 1; i++) {
-        if (!top && i == 0)
-            continue;
-        for (int j = 0; j < detail; j++) {
-
-            float pitch = i * step;
-            float tetha = j * step;
-
-            float x = cos(tetha) * r * cos(pitch);
-            float y = sin(tetha) * r * cos(pitch);
-            float z = sin(pitch) * r * dir;
-
-            sphere.vertices.push_back(x);
-            sphere.vertices.push_back(y);
-            sphere.vertices.push_back(z);
-        }
-        if (i > 0) {
-            int t1, t2, t3, t4;
-            for (int j = 0; j < detail; j++) {
-                t1 = startPoint + ((i - 1) * detail + j);
-                t2 = startPoint + ((i - 1) * detail + ((j + 1) % detail));
-                t3 = startPoint + (i * detail + j);
-                t4 = startPoint + (i * detail + ((j + 1) % detail));
-
-                cout << "[" << t1 << ", " << t2 << ", " << t3 << "], ";
-                cout << "[" << t2 << ", " << t3 << ", " << t4 << "]" << endl;
-
-                sphere.indices.push_back(t1);
-                sphere.indices.push_back(t2);
-                sphere.indices.push_back(t3);
-                sphere.indices.push_back(t2);
-                sphere.indices.push_back(t3);
-                sphere.indices.push_back(t4);
-            }
-        }
-    }
-    bool drawTop = true;
-    if (drawTop) {
-        sphere.vertices.push_back(0);
-        sphere.vertices.push_back(0);
-        sphere.vertices.push_back(r * dir);
-        int topi = detail / 2 - 1;
-        for (int i = 0; i < detail; i++) {
-            int t1 = startPoint + ((topi - 1) * detail + i);
-            int t2 = startPoint + ((topi - 1) * detail + ((i + 1) % detail));
-            int t3 = sphere.vertices.size() / 3;
-            sphere.indices.push_back(t1);
-            sphere.indices.push_back(t2);
-            sphere.indices.push_back(t3);
-            cout << "[" << t1 << ", " << t2 << ", " << t3 << "]" << endl;
-        }
-        cout << topi << endl;
-    }
-}
-
-Object createSphere(float r) {
-    int detail = 10;
-    //float pi = 3.1416f;
-    Object sphere;
-
-    setupHalfShpere(sphere, r, detail, true);
-    //setupHalfShpere(sphere, r, detail, false);
-
-    return sphere;
-}
-
-Object generateTerrain(int size) {
-    Object terrain;
+Mesh generateTerrain(int size) {
     float scale = 10;
     float step = scale / size;
+
+    vector<Vertex>       vertices;
+    vector<unsigned int> indices;
+    vector<Texture>      textures;
+
     for (int i = 0; i < size; i++) {
         for (int j = 0; j < size; j++) {
-            terrain.vertices.push_back(j * step);
-            terrain.vertices.push_back(i * step);
-            terrain.vertices.push_back(rand() % 10 * step / 4);
+            Vertex newVertex;
+            newVertex.Position.x = j * step;
+            newVertex.Position.y = rand() % 10 * step / 4;
+            newVertex.Position.z = i * step;
+            vertices.push_back(newVertex);
         }
 
         if (i > 0) {
@@ -161,48 +83,24 @@ Object generateTerrain(int size) {
                 cout << "[" << t1 << ", " << t2 << ", " << t3 << "], ";
                 cout << "[" << t2 << ", " << t3 << ", " << t4 << "]" << endl;
 
-                terrain.indices.push_back(t1);
-                terrain.indices.push_back(t2);
-                terrain.indices.push_back(t3);
-                terrain.indices.push_back(t2);
-                terrain.indices.push_back(t3);
-                terrain.indices.push_back(t4);
+                indices.push_back(t1);
+                indices.push_back(t2);
+                indices.push_back(t3);
+                indices.push_back(t2);
+                indices.push_back(t3);
+                indices.push_back(t4);
             }
         }
     }
+
+    Texture blankTexture;
+    blankTexture.id = 0;
+    blankTexture.type = "NO_TYPE";
+    blankTexture.path = "NO_PATH";
+    textures.push_back(blankTexture);
+
+    Mesh terrain(vertices, indices, textures);
     return terrain;
-}
-
-Object sphere;
-Object terrain = generateTerrain(20);
-
-unsigned initRender() {
-    vector<float> vertices = terrain.vertices;
-    vector<unsigned> indices = terrain.indices;
-
-    unsigned int VAO;
-    glGenVertexArrays(1, &VAO);
-    unsigned int EBO;
-    glGenBuffers(1, &EBO);
-    unsigned int VBO;
-    glGenBuffers(1, &VBO);
-
-    // 1. bind Vertex Array Object
-    glBindVertexArray(VAO);
-    // 2. copy our vertices array in a vertex buffer for OpenGL to use
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_STATIC_DRAW); //sizeof vertices
-    // 3. copy our index array in a element buffer for OpenGL to use
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned), indices.data(), GL_STATIC_DRAW); //sizeof indices
-    // 4. then set the vertex attributes pointers
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindVertexArray(0);
-
-    return VAO;
 }
 
 unsigned initShader() {
@@ -268,14 +166,14 @@ int main() {
     glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
 
-    vector<float> vertices = terrain.vertices;
-    vector<unsigned> indices = terrain.indices;
+    Mesh terrain = generateTerrain(20);
+    Model surfaceModel(terrain);
 
     string str_obj = "C:/Users/fedor/OneDrive/Desktop/RG/scenery/Scenery/resources/tree/Tree.obj";
-    Model ourModel(&str_obj[0]);
+    Model treeModel(&str_obj[0]);
 
     unsigned shaderProgram = initShader();
-    unsigned VAO = initRender();
+    //unsigned VAO = initRender();
 
     shader.use();
 
@@ -286,32 +184,27 @@ int main() {
         glClear(GL_COLOR_BUFFER_BIT);
 
         glUseProgram(shaderProgram);
-        shader.use();
+
+        treeModel.Draw(shader);
+        surfaceModel.Draw(shader);
+
+        /*glBindVertexArray(VAO);
+        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+        glDrawElements(GL_TRIANGLES, indices.size() * 3, GL_UNSIGNED_INT, 0);*/
 
         glm::mat4 model = glm::mat4(1.0f);
-        float angle = 20.0f;
-        model = glm::rotate(model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
-        shader.setMat4("model", model);
-        ourModel.Draw(shader);
-
-        glBindVertexArray(VAO);
-        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-        glDrawElements(GL_TRIANGLES, indices.size() * 3, GL_UNSIGNED_INT, 0);
-
-        glm::mat4 view = glm::mat4(1.0f); // make sure to initialize matrix to identity matrix first
         glm::mat4 projection = glm::mat4(1.0f);
+        glm::mat4 view = glm::mat4(1.0f);
+
         projection = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
 
-        const float radius = 10.0f;
-        float camX = sin(glfwGetTime()) * radius;
-        float camZ = cos(glfwGetTime()) * radius;
+        float camX = sin(glfwGetTime()) * ROTATION_RADIUS;
+        float camZ = cos(glfwGetTime()) * ROTATION_RADIUS;
         view = glm::lookAt(glm::vec3(camX, 0.0, camZ), glm::vec3(0.0, 0.0, 0.0), glm::vec3(0.0, 1.0, 0.0));
 
-        // pass transformation matrices to the shader
-        shader.setMat4("projection", projection); // note: currently we set the projection matrix each frame, but since the projection matrix rarely changes it's often best practice to set it outside the main loop only once.
+        shader.setMat4("model", model);
+        shader.setMat4("projection", projection);
         shader.setMat4("view", view);
-
-        projection = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
 
         glfwSwapBuffers(window);
         glfwPollEvents();
