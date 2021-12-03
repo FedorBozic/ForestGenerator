@@ -15,11 +15,14 @@
 
 #include "Shader.h"
 #include "Model.h"
+#include "PerlinNoise.h"
+#include "Terrain.h"
 
 #define SCR_WIDTH 800
 #define SCR_HEIGHT 600
 
 #define ROTATION_RADIUS 20.0f
+#define ROTATION_SPEED 0.5f
 
 using namespace std;
 
@@ -58,53 +61,12 @@ const char* fragmentShaderSource = "#version 330 core\n"
 "   FragColor = texture(texture_diffuse1, TexCoords);\n"
 "}\0";
 
-Mesh generateTerrain(int size) {
-    float scale = 10;
-    float step = scale / size;
-
-    vector<Vertex>       vertices;
-    vector<unsigned int> indices;
-    vector<Texture>      textures;
-
-    for (int i = 0; i < size; i++) {
-        for (int j = 0; j < size; j++) {
-            Vertex newVertex;
-            newVertex.Position.x = j * step;
-            newVertex.Position.y = rand() % 10 * step / 4;
-            newVertex.Position.z = i * step;
-            vertices.push_back(newVertex);
-        }
-
-        if (i > 0) {
-            int t1, t2, t3, t4;
-            for (int j = 0; j < size - 1; j++) {
-                t1 = ((i - 1) * size + j);
-                t2 = ((i - 1) * size + (j + 1));
-                t3 = (i * size + j);
-                t4 = (i * size + (j + 1));
-
-                cout << "[" << t1 << ", " << t2 << ", " << t3 << "], ";
-                cout << "[" << t2 << ", " << t3 << ", " << t4 << "]" << endl;
-
-                indices.push_back(t1);
-                indices.push_back(t2);
-                indices.push_back(t3);
-                indices.push_back(t2);
-                indices.push_back(t3);
-                indices.push_back(t4);
-            }
-        }
-    }
-
-    Texture blankTexture;
-    blankTexture.id = 0;
-    blankTexture.type = "NO_TYPE";
-    blankTexture.path = "NO_PATH";
-    textures.push_back(blankTexture);
-
-    Mesh terrain(vertices, indices, textures);
-    return terrain;
-}
+const unsigned seed = 501;
+PerlinNoise perlin(seed);
+const float scale = 20;
+const float smoothness = 10;
+const int perlinResolution = 32; //256
+const float maxHeight = 4;
 
 unsigned initShader() {
     unsigned int vertexShader;
@@ -182,11 +144,12 @@ int main() {
     glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
 
-    Mesh terrain = generateTerrain(20);
-    Model surfaceModel(terrain);
-    surfaceModel.Translate(-5.0f, 0.0f, -5.0f);
+    Terrain terrain(perlinResolution, scale);
+    Mesh terrainMesh = terrain.generateTerrain(maxHeight, smoothness, seed);
+    Model surfaceModel(terrainMesh);
+    surfaceModel.Translate(0.0f, 0.0f, 0.0f);
 
-    string str_obj = "C:/Users/fedor/OneDrive/Desktop/RG/scenery/Scenery/resources/tree/Tree.obj";
+    string str_obj = "C:/Users/SI/Documents/GitHub/scenery/Scenery/resources/tree/Tree.obj";
     Model treeModel(&str_obj[0]);
     vector<Model> treeModels = getScatteredModelsAcrossSurface(surfaceModel, treeModel, 5);
 
@@ -226,9 +189,10 @@ int main() {
 
         projection = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
 
-        float camX = sin(glfwGetTime()) * ROTATION_RADIUS;
-        float camZ = cos(glfwGetTime()) * ROTATION_RADIUS;
-        view = glm::lookAt(glm::vec3(camX, 3.0, camZ), glm::vec3(0.0, 0.0, 0.0), glm::vec3(0.0, 1.0, 0.0));
+        float camX = scale / 2 + sin(ROTATION_SPEED * glfwGetTime()) * ROTATION_RADIUS;
+        float camZ = scale / 2 + cos(ROTATION_SPEED * glfwGetTime()) * ROTATION_RADIUS;
+        float camY = 10.0f;
+        view = glm::lookAt(glm::vec3(camX, camY, camZ), glm::vec3(scale / 2, 0.0, scale / 2), glm::vec3(0.0, 1.0, 0.0));
 
         shader.setMat4("model", model);
         shader.setMat4("projection", projection);
