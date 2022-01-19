@@ -1,8 +1,10 @@
 #include "Terrain.h"
+#include <stb/stb_image.h>
 
-Terrain::Terrain(unsigned resolution, float scale) {
+Terrain::Terrain(unsigned resolution, float scale, string texPath) {
 	this->resolution = resolution;
 	this->scale = scale;
+    this->texPath = texPath;
 }
 
 Mesh Terrain::generateTerrain(float maxHeight, float smoothness, unsigned seed) {
@@ -38,14 +40,16 @@ Mesh Terrain::generateTerrain(float maxHeight, float smoothness, unsigned seed) 
     cout << noiseMaxHeight << endl;
     cout << yFactor << endl;
 
+    int repeats = 2;
+
     for (int i = 0; i < resolution; i++) {
         for (int j = 0; j < resolution; j++) {
             Vertex newVertex;
             newVertex.Position.x = j * step;
-            newVertex.Position.y = getPerlinHeight(j, i);;
+            newVertex.Position.y = getPerlinHeight(j, i);
             newVertex.Position.z = i * step;
-            newVertex.TexCoords.x = ((float)j) / (float)resolution;
-            newVertex.TexCoords.y = 1.0 - ((float)i) / (float)resolution;
+            newVertex.TexCoords.x = repeats * ((float)j) / (float)resolution;
+            newVertex.TexCoords.y = repeats * (1.0 - ((float)i) / (float)resolution);
             vertices.push_back(newVertex);
         }
 
@@ -69,12 +73,36 @@ Mesh Terrain::generateTerrain(float maxHeight, float smoothness, unsigned seed) 
             }
         }
     }
-
+    unsigned texId;
+    glGenTextures(1, &texId);
+    glBindTexture(GL_TEXTURE_2D, texId);
+    // set the texture wrapping parameters
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	// set texture wrapping to GL_REPEAT (default wrapping method)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    // set texture filtering parameters
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    // load image, create texture and generate mipmaps
+    int width, height, nrChannels;
+    stbi_set_flip_vertically_on_load(true); // tell stb_image.h to flip loaded texture's on the y-axis.
+    unsigned char* data = stbi_load(texPath.c_str(), &width, &height, &nrChannels, 0);
+    if (data)
+    {
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+        glGenerateMipmap(GL_TEXTURE_2D);
+    }
+    else
+    {
+        std::cout << "Failed to load texture" << std::endl;
+    }
+    stbi_image_free(data);
+    
     Texture blankTexture;
-    blankTexture.id = 0;
+    blankTexture.id = texId;
     blankTexture.type = "NO_TYPE";
     //"scenery/Scenery/resources/tex_grass.png";
-    blankTexture.path = "NO_PATH";
+    //blankTexture.path = "NO_PATH";
+    blankTexture.path = texPath.c_str();
     textures.push_back(blankTexture);
 
     Mesh terrain(vertices, indices, textures);

@@ -17,6 +17,7 @@
 #include "Model.h"
 #include "PerlinNoise.h"
 #include "Terrain.h"
+#include <stb/stb_image.h>
 
 #define SCR_WIDTH 800
 #define SCR_HEIGHT 600
@@ -117,18 +118,22 @@ int main() {
     glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    Terrain terrain(perlinResolution, scale);
+    string igor = "C:/Users/SI/Documents/GitHub/";
+    string fedor = "C:/Users/fedor/OneDrive/Desktop/RG/";
+
+    string currentUser = igor;
+
+    string grassTex = currentUser + "scenery/Scenery/resources/tex_grass.png";
+    Terrain terrain(perlinResolution, scale, grassTex);
     Mesh terrainMesh = terrain.generateTerrain(maxHeight, smoothness, seed);
     Model surfaceModel(terrainMesh);
     surfaceModel.Translate(0.0f, 0.0f, 0.0f);
 
-    string igor = "C:/Users/SI/Documents/GitHub/";
-    string fedor = "C:/Users/fedor/OneDrive/Desktop/RG/";
-    string str_obj = igor + "scenery/Scenery/resources/tree/Tree.obj";
+    string str_obj = currentUser + "scenery/Scenery/resources/tree/Tree.obj";
     Model treeModel(&str_obj[0]);
     vector<Model> treeModels = getScatteredModelsAcrossSurface(surfaceModel, treeModel, 5);
 
-    string rock_obj_path = igor + "scenery/Scenery/resources/rock1/Rock1.obj";
+    string rock_obj_path = currentUser + "scenery/Scenery/resources/rock1/Rock1.obj";
     Model rockModel(&rock_obj_path[0]);
     rockModel.RemoveSurfacePlanes();
     rockModel.Scale(0.2f);

@@ -12,11 +12,12 @@ class Terrain {
 	unsigned scale;
 	float maxHeight;
 	float smoothness;
+	string texPath;
 	PerlinNoise* perlin;
 	float yOffset = 0.0f;
 	float yFactor = 1.0f;
 public:
-	Terrain(unsigned resolution, float scale);
+	Terrain(unsigned resolution, float scale, string texPath);
 	Mesh generateTerrain(float maxHeight, float smoothness, unsigned seed);
 	float getHeight(float x, float z);
 private:
