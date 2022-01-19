@@ -55,11 +55,23 @@ const char* vertexShaderSource = "#version 330 core\n"
 
 const char* fragmentShaderSource = "#version 330 core\n"
 "out vec4 FragColor;\n"
+"in vec3 Position;\n"
+"in vec3 Normal;\n"
 "in vec2 TexCoords;\n"
 "uniform sampler2D texture_diffuse1;\n"
+"uniform vec3 lightPos;\n"
+"uniform vec3 viewPos;\n"
+"uniform vec3 lightColor;\n"
 "void main()\n"
 "{\n"
-"   FragColor = texture(texture_diffuse1, TexCoords);\n"
+"   float ambientStrength = 0.6;\n"
+"   vec3 ambient = ambientStrength * lightColor;\n"
+"   vec3 norm = normalize(Normal);\n"
+"   vec3 lightDir = normalize(lightPos - Position);\n"
+"   float diff = max(dot(norm, lightDir), 0.0);\n"
+"   vec3 diffuse = diff * lightColor;\n"
+"   vec3 result = (ambient + diffuse) * texture(texture_diffuse1, TexCoords).rgb;\n"
+"   FragColor = vec4(result, 1.0);\n"
 "}\0";
 
 const unsigned seed = 501;
@@ -121,7 +133,7 @@ int main() {
     string igor = "C:/Users/SI/Documents/GitHub/";
     string fedor = "C:/Users/fedor/OneDrive/Desktop/RG/";
 
-    string currentUser = igor;
+    string currentUser = fedor;
 
     string grassTex = currentUser + "scenery/Scenery/resources/tex_grass.png";
     Terrain terrain(perlinResolution, scale, grassTex);
@@ -158,6 +170,9 @@ int main() {
         {
             rockModels[i].Draw(shader);
         }
+
+        shader.setVec3("lightColor", 1.0f, 1.0f, 1.0f);
+        shader.setVec3("lightPos", 10.0f, 10.0f, 10.0f);
 
         glm::mat4 model = glm::mat4(1.0f);
         glm::mat4 projection = glm::mat4(1.0f);
