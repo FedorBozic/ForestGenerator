@@ -44,6 +44,7 @@ const char* vertexShaderSource = "#version 330 core\n"
 "layout (location = 1) in vec3 aNormal;"
 "layout(location = 2) in vec2 aTexCoords;\n"
 "out vec2 TexCoords;\n"
+"out vec3 Normal;\n"
 "uniform mat4 model;\n"
 "uniform mat4 view;\n"
 "uniform mat4 projection;\n"
@@ -51,6 +52,7 @@ const char* vertexShaderSource = "#version 330 core\n"
 "{\n"
 "    gl_Position = projection * view * model * vec4(aPos, 1.0f);\n"
 "    TexCoords = aTexCoords;\n"
+"    Normal = aNormal;\n"
 "};\n";
 
 const char* fragmentShaderSource = "#version 330 core\n"
@@ -64,14 +66,15 @@ const char* fragmentShaderSource = "#version 330 core\n"
 "uniform vec3 lightColor;\n"
 "void main()\n"
 "{\n"
-"   float ambientStrength = 0.6;\n"
+"   float ambientStrength = 0.0;\n"
 "   vec3 ambient = ambientStrength * lightColor;\n"
 "   vec3 norm = normalize(Normal);\n"
 "   vec3 lightDir = normalize(lightPos - Position);\n"
 "   float diff = max(dot(norm, lightDir), 0.0);\n"
 "   vec3 diffuse = diff * lightColor;\n"
-"   vec3 result = (ambient + diffuse) * texture(texture_diffuse1, TexCoords).rgb;\n"
-"   FragColor = vec4(result, 1.0);\n"
+"   vec4 texCol = texture(texture_diffuse1, TexCoords);\n"
+"   vec3 result = (ambient + diffuse) * texCol.rgb;\n"
+"   FragColor = vec4(result, texCol.a);\n"
 "}\0";
 
 const unsigned seed = 501;
@@ -133,7 +136,7 @@ int main() {
     string igor = "C:/Users/SI/Documents/GitHub/";
     string fedor = "C:/Users/fedor/OneDrive/Desktop/RG/";
 
-    string currentUser = fedor;
+    string currentUser = igor;
 
     string grassTex = currentUser + "scenery/Scenery/resources/tex_grass.png";
     Terrain terrain(perlinResolution, scale, grassTex);
@@ -172,7 +175,7 @@ int main() {
         }
 
         shader.setVec3("lightColor", 1.0f, 1.0f, 1.0f);
-        shader.setVec3("lightPos", 10.0f, 10.0f, 10.0f);
+        shader.setVec3("lightPos", 10.0f, 100.0f, 10.0f);
 
         glm::mat4 model = glm::mat4(1.0f);
         glm::mat4 projection = glm::mat4(1.0f);
