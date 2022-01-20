@@ -18,6 +18,9 @@
 #include "PerlinNoise.h"
 #include "Terrain.h"
 #include <stb/stb_image.h>
+#include "vendor/imgui/imgui.h"
+#include "vendor/imgui/imgui_impl_glfw.h"
+#include "vendor/imgui/imgui_impl_opengl3.h"
 
 #define SCR_WIDTH 800
 #define SCR_HEIGHT 600
@@ -61,6 +64,16 @@ const char* vertexShaderSource = "#version 330 core\n"
 "    //gl_Position = projection * view * vec4(aPos, 1.0);\n"
 "};\n";
 
+const char* sunSurfaceVertexShader = "#version 330 core\n"
+"layout (location = 0) in vec3 aPos;\n"
+"uniform mat4 model;\n"
+"uniform mat4 view;\n"
+"uniform mat4 projection;\n"
+"void main()\n"
+"{\n"
+"    gl_Position = projection * view * model * vec4(aPos, 1.0);\n"
+"}\0";
+
 const char* fragmentShaderSource = "#version 330 core\n"
 "out vec4 FragColor;\n"
 "in vec3 Position;\n"
@@ -81,6 +94,13 @@ const char* fragmentShaderSource = "#version 330 core\n"
 "   vec4 texCol = texture(texture_diffuse1, TexCoords);\n"
 "   vec3 result = (ambient + diffuse) * texCol.rgb;\n"
 "   FragColor = vec4(result, texCol.a);\n"
+"}\0";
+
+const char* sunSurfaceFragmentShader = "#version 330 core\n"
+"out vec4 FragColor;\n"
+"void main()\n"
+"{\n"
+"    FragColor = vec4(1.0);\n"
 "}\0";
 
 const unsigned seed = 501;
@@ -125,6 +145,7 @@ int main() {
 
     //Shader shader(vertexShaderSource, fragmentShaderSource);
     Shader shader("shader.vs", "shader.fs");
+    Shader sunSurfaceShader(sunSurfaceVertexShader, sunSurfaceFragmentShader);
     glViewport(0, 0, 800, 600);
 
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
@@ -143,13 +164,16 @@ int main() {
     string igor = "C:/Users/SI/Documents/GitHub/";
     string fedor = "C:/Users/fedor/OneDrive/Desktop/RG/";
 
-    string currentUser = igor;
+    string currentUser = fedor;
 
     string grassTex = currentUser + "scenery/Scenery/resources/tex_grass.png";
     Terrain terrain(perlinResolution, scale, grassTex);
     Mesh terrainMesh = terrain.generateTerrain(maxHeight, smoothness, seed);
     Model surfaceModel(terrainMesh);
     surfaceModel.Translate(0.0f, 0.0f, 0.0f);
+
+    string str_sun_path = currentUser + "scenery/Scenery/resources/sun/13913_Sun_v2_l3.obj";
+    Model sunModel(&str_sun_path[0]);
 
     string str_obj = currentUser + "scenery/Scenery/resources/tree/Tree.obj";
     Model treeModel(&str_obj[0]);
@@ -161,7 +185,19 @@ int main() {
     rockModel.Scale(0.2f);
     vector<Model> rockModels = getScatteredModelsAcrossSurface(surfaceModel, rockModel, 10);
 
-    shader.use();
+    /*string str_backpack_path = currentUser + "scenery/Scenery/resources/test_backpack/backpack.obj";
+    Model backpackModel(&str_backpack_path[0]);
+    backpackModel.Scale(5.0f);
+    backpackModel.Translate(10.0f, 0.0f, 10.0f);*/
+
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGuiIO& io = ImGui::GetIO();
+    // Setup Platform/Renderer bindings
+    ImGui_ImplGlfw_InitForOpenGL(window, true);
+    ImGui_ImplOpenGL3_Init();
+    // Setup Dear ImGui style
+    ImGui::StyleColorsDark();
 
     while (!glfwWindowShouldClose(window)) {
         processInput(window);
@@ -169,6 +205,11 @@ int main() {
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
+
+        shader.use();
         surfaceModel.Draw(shader);
         treeModel.Draw(shader);
         for (int i = 0; i < treeModels.size(); i++)
@@ -180,9 +221,7 @@ int main() {
         {
             rockModels[i].Draw(shader);
         }
-
-        shader.setVec3("lightColor", 1.0f, 1.0f, 1.0f);
-        shader.setVec3("lightPos", 10.0f, 10.0f, 10.0f);
+        //backpackModel.Draw(shader);
 
         glm::mat4 model = glm::mat4(1.0f);
         glm::mat4 projection = glm::mat4(1.0f);
@@ -195,9 +234,30 @@ int main() {
         float camY = 10.0f;
         view = glm::lookAt(glm::vec3(camX, camY, camZ), glm::vec3(scale / 2, 0.0, scale / 2), glm::vec3(0.0, 1.0, 0.0));
 
+        float sunX = 1.0f;
+        float sunZ = 1.0f;
+        float sunY = 1.0f;
+
+        shader.setVec3("lightColor", 1.0f, 1.0f, 1.0f);
+        shader.setVec3("lightPos", sunX, sunZ, sunY);
         shader.setMat4("model", model);
         shader.setMat4("projection", projection);
         shader.setMat4("view", view);
+
+        sunSurfaceShader.use();
+        sunSurfaceShader.setMat4("projection", projection);
+        sunSurfaceShader.setMat4("view", view);
+        sunSurfaceShader.setMat4("model", model);
+
+        rockModel.Draw(sunSurfaceShader);
+
+        ImGui::Begin("Demo window");
+        ImGui::Button("Hello!");
+        ImGui::End();
+
+        // Render dear imgui into screen
+        ImGui::Render();
+        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
         glfwSwapBuffers(window);
         glfwPollEvents();
