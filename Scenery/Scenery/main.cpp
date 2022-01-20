@@ -119,7 +119,7 @@ int main() {
     string igor = "C:/Users/SI/Documents/GitHub/";
     string fedor = "C:/Users/fedor/OneDrive/Desktop/RG/";
 
-    string currentUser = igor;
+    string currentUser = fedor;
 
     string grassTex = currentUser + "scenery/Scenery/resources/tex_grass.png";
     Terrain terrain(perlinResolution, scale, grassTex);
@@ -127,7 +127,7 @@ int main() {
     Model surfaceModel(terrainMesh);
     surfaceModel.Translate(0.0f, 0.0f, 0.0f);
 
-    string str_sun_path = currentUser + "scenery/Scenery/resources/sun/13913_Sun_v2_l3.obj";
+    string str_sun_path = currentUser + "scenery/Scenery/resources/sun/sun.obj";
     Model sunModel(&str_sun_path[0]);
 
     string str_obj = currentUser + "scenery/Scenery/resources/tree/Tree.obj";
@@ -210,11 +210,12 @@ int main() {
 
         sunSurfaceShader.use();
         sunSurfaceShader.setVec3("lightColor", color[0], color[1], color[2]);
+        sunSurfaceShader.setFloat("threshold", 0.5);
         sunSurfaceShader.setMat4("projection", projection);
         sunSurfaceShader.setMat4("view", view);
         sunSurfaceShader.setMat4("model", model);
 
-        Model lightModelTranslated = Model(lightModel);
+        Model lightModelTranslated = Model(sunModel);
         lightModelTranslated.Translate(lightPosition[0], lightPosition[1], lightPosition[2]);
         lightModelTranslated.Draw(sunSurfaceShader);
 
