@@ -119,7 +119,7 @@ int main() {
     string igor = "C:/Users/SI/Documents/GitHub/";
     string fedor = "C:/Users/fedor/OneDrive/Desktop/RG/";
 
-    string currentUser = fedor;
+    string currentUser = igor;
 
     string grassTex = currentUser + "scenery/Scenery/resources/tex_grass.png";
     Terrain terrain(perlinResolution, scale, grassTex);

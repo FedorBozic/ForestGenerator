@@ -61,9 +61,10 @@ Mesh Terrain::generateTerrain(float maxHeight, float smoothness, unsigned seed) 
                 t4 = (i * resolution + (j + 1));
                 //cout << "[" << t1 << ", " << t2 << ", " << t3 << "], ";
                 //cout << "[" << t2 << ", " << t3 << ", " << t4 << "]" << endl;
-                indices.push_back(t1);
-                indices.push_back(t2);
                 indices.push_back(t3);
+                indices.push_back(t2);
+                indices.push_back(t1);
+
                 indices.push_back(t2);
                 indices.push_back(t3);
                 indices.push_back(t4);
