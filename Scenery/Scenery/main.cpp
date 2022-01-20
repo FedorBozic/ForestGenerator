@@ -45,14 +45,20 @@ const char* vertexShaderSource = "#version 330 core\n"
 "layout(location = 2) in vec2 aTexCoords;\n"
 "out vec2 TexCoords;\n"
 "out vec3 Normal;\n"
+"out vec3 Position;\n"
 "uniform mat4 model;\n"
 "uniform mat4 view;\n"
 "uniform mat4 projection;\n"
 "void main()\n"
 "{\n"
-"    gl_Position = projection * view * model * vec4(aPos, 1.0f);\n"
+"    gl_Position = projection * view * vec4(aPos, 1.0f);\n"
 "    TexCoords = aTexCoords;\n"
 "    Normal = aNormal;\n"
+"    Normal = mat3(transpose(inverse(model))) * aNormal;\n"
+"    //Position = aPos;\n"
+"    Position = vec3(model * vec4(aPos, 1.0));\n"
+"    //Normal = mat3(transpose(inverse(model))) * aNormal\n"
+"    //gl_Position = projection * view * vec4(aPos, 1.0);\n"
 "};\n";
 
 const char* fragmentShaderSource = "#version 330 core\n"
@@ -66,7 +72,7 @@ const char* fragmentShaderSource = "#version 330 core\n"
 "uniform vec3 lightColor;\n"
 "void main()\n"
 "{\n"
-"   float ambientStrength = 0.0;\n"
+"   float ambientStrength = 0.2;\n"
 "   vec3 ambient = ambientStrength * lightColor;\n"
 "   vec3 norm = normalize(Normal);\n"
 "   vec3 lightDir = normalize(lightPos - Position);\n"
@@ -81,7 +87,7 @@ const unsigned seed = 501;
 PerlinNoise perlin(seed);
 const float scale = 20;
 const float smoothness = 10;
-const int perlinResolution = 32; //256
+const int perlinResolution = 32; //256, 32
 const float maxHeight = 4;
 
 vector<Model> getScatteredModelsAcrossSurface(Model surface, Model objectTemplate, unsigned int count)
@@ -117,7 +123,8 @@ int main() {
         return -1;
     }
 
-    Shader shader(vertexShaderSource, fragmentShaderSource);
+    //Shader shader(vertexShaderSource, fragmentShaderSource);
+    Shader shader("shader.vs", "shader.fs");
     glViewport(0, 0, 800, 600);
 
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
@@ -175,7 +182,7 @@ int main() {
         }
 
         shader.setVec3("lightColor", 1.0f, 1.0f, 1.0f);
-        shader.setVec3("lightPos", 10.0f, 100.0f, 10.0f);
+        shader.setVec3("lightPos", 10.0f, 10.0f, 10.0f);
 
         glm::mat4 model = glm::mat4(1.0f);
         glm::mat4 projection = glm::mat4(1.0f);
