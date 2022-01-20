@@ -203,6 +203,7 @@ int main() {
 
         shader.setVec3("lightColor", color[0], color[1], color[2]);
         shader.setVec3("lightPos", lightPosition[0], lightPosition[1], lightPosition[2]);
+        shader.setVec3("viewPos", camX, camZ, camY);
         shader.setMat4("model", model);
         shader.setMat4("projection", projection);
         shader.setMat4("view", view);
