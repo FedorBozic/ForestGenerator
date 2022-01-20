@@ -41,7 +41,6 @@ Mesh Terrain::generateTerrain(float maxHeight, float smoothness, unsigned seed) 
     cout << yFactor << endl;
 
     int repeats = 2;
-
     for (int i = 0; i < resolution; i++) {
         for (int j = 0; j < resolution; j++) {
             Vertex newVertex;
@@ -60,10 +59,8 @@ Mesh Terrain::generateTerrain(float maxHeight, float smoothness, unsigned seed) 
                 t2 = ((i - 1) * resolution + (j + 1));
                 t3 = (i * resolution + j);
                 t4 = (i * resolution + (j + 1));
-
                 //cout << "[" << t1 << ", " << t2 << ", " << t3 << "], ";
                 //cout << "[" << t2 << ", " << t3 << ", " << t4 << "]" << endl;
-
                 indices.push_back(t1);
                 indices.push_back(t2);
                 indices.push_back(t3);
@@ -73,6 +70,8 @@ Mesh Terrain::generateTerrain(float maxHeight, float smoothness, unsigned seed) 
             }
         }
     }
+
+
     unsigned texId;
     glGenTextures(1, &texId);
     glBindTexture(GL_TEXTURE_2D, texId);
