@@ -16,6 +16,10 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
+    <None Include="shader.fs" />
+    <None Include="shader.vs" />
+    <None Include="sunShader.vs" />
+    <None Include="sunShader.fs" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="glad.c">

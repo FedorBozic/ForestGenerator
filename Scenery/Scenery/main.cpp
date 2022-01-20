@@ -42,28 +42,6 @@ void processInput(GLFWwindow* window)
         glfwSetWindowShouldClose(window, true);
 }
 
-const char* vertexShaderSource = "#version 330 core\n"
-"layout(location = 0) in vec3 aPos;\n"
-"layout (location = 1) in vec3 aNormal;"
-"layout(location = 2) in vec2 aTexCoords;\n"
-"out vec2 TexCoords;\n"
-"out vec3 Normal;\n"
-"out vec3 Position;\n"
-"uniform mat4 model;\n"
-"uniform mat4 view;\n"
-"uniform mat4 projection;\n"
-"void main()\n"
-"{\n"
-"    gl_Position = projection * view * vec4(aPos, 1.0f);\n"
-"    TexCoords = aTexCoords;\n"
-"    Normal = aNormal;\n"
-"    Normal = mat3(transpose(inverse(model))) * aNormal;\n"
-"    //Position = aPos;\n"
-"    Position = vec3(model * vec4(aPos, 1.0));\n"
-"    //Normal = mat3(transpose(inverse(model))) * aNormal\n"
-"    //gl_Position = projection * view * vec4(aPos, 1.0);\n"
-"};\n";
-
 const char* sunSurfaceVertexShader = "#version 330 core\n"
 "layout (location = 0) in vec3 aPos;\n"
 "uniform mat4 model;\n"
@@ -72,28 +50,6 @@ const char* sunSurfaceVertexShader = "#version 330 core\n"
 "void main()\n"
 "{\n"
 "    gl_Position = projection * view * model * vec4(aPos, 1.0);\n"
-"}\0";
-
-const char* fragmentShaderSource = "#version 330 core\n"
-"out vec4 FragColor;\n"
-"in vec3 Position;\n"
-"in vec3 Normal;\n"
-"in vec2 TexCoords;\n"
-"uniform sampler2D texture_diffuse1;\n"
-"uniform vec3 lightPos;\n"
-"uniform vec3 viewPos;\n"
-"uniform vec3 lightColor;\n"
-"void main()\n"
-"{\n"
-"   float ambientStrength = 0.2;\n"
-"   vec3 ambient = ambientStrength * lightColor;\n"
-"   vec3 norm = normalize(Normal);\n"
-"   vec3 lightDir = normalize(lightPos - Position);\n"
-"   float diff = max(dot(norm, lightDir), 0.0);\n"
-"   vec3 diffuse = diff * lightColor;\n"
-"   vec4 texCol = texture(texture_diffuse1, TexCoords);\n"
-"   vec3 result = (ambient + diffuse) * texCol.rgb;\n"
-"   FragColor = vec4(result, texCol.a);\n"
 "}\0";
 
 const char* sunSurfaceFragmentShader = "#version 330 core\n"
@@ -143,9 +99,8 @@ int main() {
         return -1;
     }
 
-    //Shader shader(vertexShaderSource, fragmentShaderSource);
     Shader shader("shader.vs", "shader.fs");
-    Shader sunSurfaceShader(sunSurfaceVertexShader, sunSurfaceFragmentShader);
+    Shader sunSurfaceShader("sunShader.vs", "sunShader.fs");
     glViewport(0, 0, 800, 600);
 
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
@@ -181,7 +136,9 @@ int main() {
 
     string rock_obj_path = currentUser + "scenery/Scenery/resources/rock1/Rock1.obj";
     Model rockModel(&rock_obj_path[0]);
+    Model lightModel(&rock_obj_path[0]);
     rockModel.RemoveSurfacePlanes();
+    lightModel.RemoveSurfacePlanes();
     rockModel.Scale(0.2f);
     vector<Model> rockModels = getScatteredModelsAcrossSurface(surfaceModel, rockModel, 10);
 
@@ -225,7 +182,7 @@ int main() {
         //backpackModel.Draw(shader);
 
         ImGui::Begin("Light Settings");
-        ImGui::SliderFloat3("position", lightPosition, -10.0, 10.0);
+        ImGui::SliderFloat3("position", lightPosition, 0.0, 20.0);
         static float color[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
         ImGui::ColorEdit3("color", color);
         ImGui::End();
@@ -251,11 +208,14 @@ int main() {
         shader.setMat4("view", view);
 
         sunSurfaceShader.use();
+        sunSurfaceShader.setVec3("lightColor", color[0], color[1], color[2]);
         sunSurfaceShader.setMat4("projection", projection);
         sunSurfaceShader.setMat4("view", view);
         sunSurfaceShader.setMat4("model", model);
 
-        rockModel.Draw(sunSurfaceShader);
+        Model lightModelTranslated = Model(lightModel);
+        lightModelTranslated.Translate(lightPosition[0], lightPosition[1], lightPosition[2]);
+        lightModelTranslated.Draw(sunSurfaceShader);
 
         glfwSwapBuffers(window);
         glfwPollEvents();
