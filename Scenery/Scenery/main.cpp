@@ -190,13 +190,14 @@ int main() {
     backpackModel.Scale(5.0f);
     backpackModel.Translate(10.0f, 0.0f, 10.0f);*/
 
+    float lightPosition[3] = { 0.0f, 0.0f, 0.0f };
+
+    /* IMGUI SETUP */
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
-    // Setup Platform/Renderer bindings
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init();
-    // Setup Dear ImGui style
     ImGui::StyleColorsDark();
 
     while (!glfwWindowShouldClose(window)) {
@@ -223,6 +224,15 @@ int main() {
         }
         //backpackModel.Draw(shader);
 
+        ImGui::Begin("Light Settings");
+        ImGui::SliderFloat3("position", lightPosition, -10.0, 10.0);
+        static float color[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
+        ImGui::ColorEdit3("color", color);
+        ImGui::End();
+
+        ImGui::Render();
+        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
         glm::mat4 model = glm::mat4(1.0f);
         glm::mat4 projection = glm::mat4(1.0f);
         glm::mat4 view = glm::mat4(1.0f);
@@ -234,12 +244,8 @@ int main() {
         float camY = 10.0f;
         view = glm::lookAt(glm::vec3(camX, camY, camZ), glm::vec3(scale / 2, 0.0, scale / 2), glm::vec3(0.0, 1.0, 0.0));
 
-        float sunX = 1.0f;
-        float sunZ = 1.0f;
-        float sunY = 1.0f;
-
-        shader.setVec3("lightColor", 1.0f, 1.0f, 1.0f);
-        shader.setVec3("lightPos", sunX, sunZ, sunY);
+        shader.setVec3("lightColor", color[0], color[1], color[2]);
+        shader.setVec3("lightPos", lightPosition[0], lightPosition[1], lightPosition[2]);
         shader.setMat4("model", model);
         shader.setMat4("projection", projection);
         shader.setMat4("view", view);
@@ -251,17 +257,13 @@ int main() {
 
         rockModel.Draw(sunSurfaceShader);
 
-        ImGui::Begin("Demo window");
-        ImGui::Button("Hello!");
-        ImGui::End();
-
-        // Render dear imgui into screen
-        ImGui::Render();
-        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
+
+    ImGui_ImplOpenGL3_Shutdown();
+    ImGui_ImplGlfw_Shutdown();
+    ImGui::DestroyContext();
 
     glfwTerminate();
     return 0;
