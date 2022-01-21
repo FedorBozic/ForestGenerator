@@ -44,29 +44,12 @@ void processInput(GLFWwindow* window)
         glfwSetWindowShouldClose(window, true);
 }
 
-const char* sunSurfaceVertexShader = "#version 330 core\n"
-"layout (location = 0) in vec3 aPos;\n"
-"uniform mat4 model;\n"
-"uniform mat4 view;\n"
-"uniform mat4 projection;\n"
-"void main()\n"
-"{\n"
-"    gl_Position = projection * view * model * vec4(aPos, 1.0);\n"
-"}\0";
-
-const char* sunSurfaceFragmentShader = "#version 330 core\n"
-"out vec4 FragColor;\n"
-"void main()\n"
-"{\n"
-"    FragColor = vec4(1.0);\n"
-"}\0";
-
 const unsigned seed = 501;
 PerlinNoise perlin(seed);
-const float scale = 40;
-const float smoothness = 10;
+float scale = 40;
+float smoothness = 10;
 const int perlinResolution = 32; //256, 32
-const float maxHeight = 4;
+float maxHeight = 4;
 
 vector<Model> getScatteredModelsAcrossSurface(Model surface, Model objectTemplate, unsigned int count)
 {
@@ -198,6 +181,9 @@ int main() {
     vector<Model> allScatteredModels = scatterModelsAcrossTerrain(terrain, allScatterTemplateModels);
 
     float lightPosition[3] = { 0.0f, 0.0f, 0.0f };
+    float changedScale = scale;
+    float changedSmoothness = smoothness;
+    float changedMaxHeight = maxHeight;
 
     /* IMGUI SETUP */
     IMGUI_CHECKVERSION();
@@ -237,10 +223,20 @@ int main() {
         ImGui::ColorEdit3("color", color);
         ImGui::End();
 
-
         ImGui::Begin("Terrain Settings");
+        ImGui::SliderFloat("Scale", &changedScale, 0.0, 50.0);
+        ImGui::SliderFloat("Smoothness", &changedSmoothness, 0.0, 20.0);
+        ImGui::SliderFloat("Max Height", &changedMaxHeight, 0.0, 10.0);
         if (ImGui::Button("Regenerate Terrain"))
         {
+            scale = changedScale;
+            smoothness = changedSmoothness;
+            maxHeight = changedMaxHeight;
+            Terrain newTerrain(perlinResolution, scale, grassTex);
+            Mesh newTerrainMesh = newTerrain.generateTerrain(maxHeight, smoothness, seed);
+            Model newSurfaceModel(newTerrainMesh);
+            newSurfaceModel.Translate(0.0f, 0.0f, 0.0f);
+            surfaceModel = newSurfaceModel;
             allScatteredModels = scatterModelsAcrossTerrain(terrain, allScatterTemplateModels);
         }
         ImGui::End();
