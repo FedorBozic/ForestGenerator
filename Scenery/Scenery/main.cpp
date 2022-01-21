@@ -142,8 +142,11 @@ int main() {
 
     string currentUser = fedor;
 
-    string str_obj = currentUser + "scenery/Scenery/resources/tree1/tree1.obj";
-    Model treeModel(&str_obj[0]);
+    string tree_path = currentUser + "scenery/Scenery/resources/tree1/tree1.obj";
+    Model treeModel(&tree_path[0]);
+
+    string flower_path = currentUser + "scenery/Scenery/resources/flower1/flower1.obj";
+    Model flowerModel(&flower_path[0]);
 
     string grassTex = currentUser + "scenery/Scenery/resources/tex_grass.png";
     Terrain terrain(perlinResolution, scale, grassTex);
@@ -158,6 +161,8 @@ int main() {
     Possion possion;
     list<Point> treePositions = possion.GeneratePossion(scale, 5.0, 5.0, 30);
     vector<Model> treeModels = getTreeModelsFromPositions(terrain, treeModel, treePositions);
+    list<Point> flowerPositions = possion.GeneratePossion(scale, 5.0, 5.0, 30);
+    vector<Model> flowerModels = getTreeModelsFromPositions(terrain, flowerModel, flowerPositions);
 
     string str_sky = currentUser + "scenery/Scenery/resources/sky/sky.obj";
     Model skyModel(&str_sky[0]);
@@ -232,6 +237,10 @@ int main() {
         for (int i = 0; i < treeModels.size(); i++)
         {
             treeModels[i].Draw(shader);
+        }
+        for (int i = 0; i < flowerModels.size(); i++)
+        {
+            flowerModels[i].Draw(shader);
         }
         rockModel.Draw(shader);
         for (int i = 0; i < rockModels.size(); i++)
