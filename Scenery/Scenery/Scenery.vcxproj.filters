@@ -20,6 +20,8 @@
     <None Include="shader.vs" />
     <None Include="sunShader.vs" />
     <None Include="sunShader.fs" />
+    <None Include="shaderPassthrough.fs" />
+    <None Include="shaderPassthrough.vs" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="glad.c">
@@ -61,6 +63,9 @@
     <ClCompile Include="vendor\imgui\imgui_widgets.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Possion.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Shader.h">
@@ -97,6 +102,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="vendor\imgui\imstb_truetype.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Possion.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

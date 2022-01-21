@@ -17,16 +17,18 @@
 #include "Model.h"
 #include "PerlinNoise.h"
 #include "Terrain.h"
+#include "Possion.h"
 #include <stb/stb_image.h>
 #include "vendor/imgui/imgui.h"
 #include "vendor/imgui/imgui_impl_glfw.h"
 #include "vendor/imgui/imgui_impl_opengl3.h"
 
-#define SCR_WIDTH 800
-#define SCR_HEIGHT 600
+#define SCR_WIDTH 1024
+#define SCR_HEIGHT 576
 
-#define ROTATION_RADIUS 20.0f
+#define ROTATION_RADIUS 50.0f
 #define ROTATION_SPEED 0.5f
+#define CAMERA_HEIGHT 30.0f
 
 using namespace std;
 
@@ -61,7 +63,7 @@ const char* sunSurfaceFragmentShader = "#version 330 core\n"
 
 const unsigned seed = 501;
 PerlinNoise perlin(seed);
-const float scale = 20;
+const float scale = 40;
 const float smoothness = 10;
 const int perlinResolution = 32; //256, 32
 const float maxHeight = 4;
@@ -80,13 +82,31 @@ vector<Model> getScatteredModelsAcrossSurface(Model surface, Model objectTemplat
     return result;
 }
 
+vector<Model> getTreeModelsFromPositions(Terrain terrain, Model objectTemplate, list<Point> treePositions)
+{
+    vector<Model> result;
+    std::list<Point>::iterator it;
+    it = treePositions.begin();
+    
+    for (unsigned int i = 0; i < treePositions.size(); i++)
+    {
+        Point point = *it;
+
+        Model* newModel = new Model(objectTemplate);
+        newModel->Translate(point.x, terrain.getHeight(point.x, point.y), point.y);
+        result.push_back(*newModel);
+        advance(it, 1);
+    }
+    return result;
+}
+
 int main() {
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    GLFWwindow* window = glfwCreateWindow(800, 600, "LearnOpenGL", NULL, NULL);
+    GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "LearnOpenGL", NULL, NULL);
     if (window == NULL) {
         std::cout << "Failed to create GLFW window" << std::endl;
         glfwTerminate();
@@ -101,7 +121,8 @@ int main() {
 
     Shader shader("shader.vs", "shader.fs");
     Shader sunSurfaceShader("sunShader.vs", "sunShader.fs");
-    glViewport(0, 0, 800, 600);
+    Shader shaderPassthrough("shaderPassthrough.vs", "shaderPassthrough.fs");
+    glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
 
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
@@ -119,7 +140,7 @@ int main() {
     string igor = "C:/Users/SI/Documents/GitHub/";
     string fedor = "C:/Users/fedor/OneDrive/Desktop/RG/";
 
-    string currentUser = fedor;
+    string currentUser = igor;
 
     string grassTex = currentUser + "scenery/Scenery/resources/tex_grass.png";
     Terrain terrain(perlinResolution, scale, grassTex);
@@ -132,7 +153,15 @@ int main() {
 
     string str_obj = currentUser + "scenery/Scenery/resources/tree/Tree.obj";
     Model treeModel(&str_obj[0]);
-    vector<Model> treeModels = getScatteredModelsAcrossSurface(surfaceModel, treeModel, 5);
+    //vector<Model> treeModels = getScatteredModelsAcrossSurface(surfaceModel, treeModel, 5);
+    Possion possion;
+    list<Point> treePositions = possion.GeneratePossion(scale, scale / 15, scale / 15, 30);
+    vector<Model> treeModels = getTreeModelsFromPositions(terrain, treeModel, treePositions);
+
+    string str_sky = currentUser + "scenery/Scenery/resources/sky/sky.obj";
+    Model skyModel(&str_sky[0]);
+    skyModel.Scale(1000.0f);
+    skyModel.Translate(10, 6, 10);
 
     string rock_obj_path = currentUser + "scenery/Scenery/resources/rock1/Rock1.obj";
     Model rockModel(&rock_obj_path[0]);
@@ -146,6 +175,8 @@ int main() {
     Model backpackModel(&str_backpack_path[0]);
     backpackModel.Scale(5.0f);
     backpackModel.Translate(10.0f, 0.0f, 10.0f);*/
+
+    //poisson_distribution //postoji??
 
     float lightPosition[3] = { 0.0f, 0.0f, 0.0f };
 
@@ -167,6 +198,33 @@ int main() {
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
 
+        glm::mat4 model = glm::mat4(1.0f);
+        glm::mat4 projection = glm::mat4(1.0f);
+        glm::mat4 view = glm::mat4(1.0f);
+
+        projection = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 10000.0f);
+
+        float camX = scale / 2 + sin(ROTATION_SPEED * glfwGetTime()) * ROTATION_RADIUS;
+        float camZ = scale / 2 + cos(ROTATION_SPEED * glfwGetTime()) * ROTATION_RADIUS;
+        float camY = CAMERA_HEIGHT;
+        view = glm::lookAt(glm::vec3(camX, camY, camZ), glm::vec3(scale / 2, 0.0, scale / 2), glm::vec3(0.0, 1.0, 0.0));
+
+        shaderPassthrough.use();
+        skyModel.Draw(shaderPassthrough);
+
+        ImGui::Begin("Light Settings");
+        ImGui::SliderFloat3("position", lightPosition, 0.0, 20.0);
+        static float color[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
+        ImGui::ColorEdit3("color", color);
+        ImGui::End();
+
+        shaderPassthrough.setVec3("lightColor", color[0], color[1], color[2]);
+        shaderPassthrough.setVec3("lightPos", lightPosition[0], lightPosition[1], lightPosition[2]);
+        shaderPassthrough.setVec3("viewPos", camX, camZ, camY);
+        shaderPassthrough.setMat4("model", model);
+        shaderPassthrough.setMat4("projection", projection);
+        shaderPassthrough.setMat4("view", view);
+
         shader.use();
         surfaceModel.Draw(shader);
         treeModel.Draw(shader);
@@ -179,27 +237,8 @@ int main() {
         {
             rockModels[i].Draw(shader);
         }
+        
         //backpackModel.Draw(shader);
-
-        ImGui::Begin("Light Settings");
-        ImGui::SliderFloat3("position", lightPosition, 0.0, 20.0);
-        static float color[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
-        ImGui::ColorEdit3("color", color);
-        ImGui::End();
-
-        ImGui::Render();
-        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-
-        glm::mat4 model = glm::mat4(1.0f);
-        glm::mat4 projection = glm::mat4(1.0f);
-        glm::mat4 view = glm::mat4(1.0f);
-
-        projection = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
-
-        float camX = scale / 2 + sin(ROTATION_SPEED * glfwGetTime()) * ROTATION_RADIUS;
-        float camZ = scale / 2 + cos(ROTATION_SPEED * glfwGetTime()) * ROTATION_RADIUS;
-        float camY = 10.0f;
-        view = glm::lookAt(glm::vec3(camX, camY, camZ), glm::vec3(scale / 2, 0.0, scale / 2), glm::vec3(0.0, 1.0, 0.0));
 
         shader.setVec3("lightColor", color[0], color[1], color[2]);
         shader.setVec3("lightPos", lightPosition[0], lightPosition[1], lightPosition[2]);
@@ -218,6 +257,9 @@ int main() {
         Model lightModelTranslated = Model(sunModel);
         lightModelTranslated.Translate(lightPosition[0], lightPosition[1], lightPosition[2]);
         lightModelTranslated.Draw(sunSurfaceShader);
+
+        ImGui::Render();
+        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
         glfwSwapBuffers(window);
         glfwPollEvents();

@@ -18,7 +18,8 @@ void main()
 
 
    vec3 norm = normalize(Normal);
-   vec3 lightDir = normalize(lightPos - Position);
+   //vec3 lightDir = normalize(lightPos - Position);
+   vec3 lightDir = normalize(vec3(1.0, 1.0, 1.0));
    float diff = max(dot(norm, lightDir), 0.0);
    vec3 diffuse = diff * lightColor * texture(texture_diffuse, TexCoords).rgb;
 
