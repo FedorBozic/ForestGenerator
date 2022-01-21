@@ -148,10 +148,11 @@ int main() {
     string flower_pink_path = currentUser + "scenery/Scenery/resources/flower1/flower1.obj";
     Model flowerModelPink(&flower_pink_path[0]);
     flowerModelPink.Scale(0.1f);
-
     string flower_white_path = currentUser + "scenery/Scenery/resources/flower2/flower1.obj";
     Model flowerModelWhite(&flower_white_path[0]);
     flowerModelWhite.Scale(0.1f);
+    string grass_path = currentUser + "scenery/Scenery/resources/grass/grass.obj";
+    Model grassModel(&grass_path[0]);
 
     string grassTex = currentUser + "scenery/Scenery/resources/tex_grass.png";
     Terrain terrain(perlinResolution, scale, grassTex);
@@ -170,6 +171,8 @@ int main() {
     vector<Model> flowerPinkModels = getTreeModelsFromPositions(terrain, flowerModelPink, flowerPinkPositions);
     list<Point> flowerWhitePositions = possion.GeneratePossion(scale, 5.0, 5.0, 30);
     vector<Model> flowerWhiteModels = getTreeModelsFromPositions(terrain, flowerModelWhite, flowerWhitePositions);
+    list<Point> grassPositions = possion.GeneratePossion(scale, 5.0, 5.0, 30);
+    vector<Model> grassModels = getTreeModelsFromPositions(terrain, grassModel, grassPositions);
 
     string str_sky = currentUser + "scenery/Scenery/resources/sky/sky.obj";
     Model skyModel(&str_sky[0]);
@@ -253,7 +256,10 @@ int main() {
         {
             flowerWhiteModels[i].Draw(shader);
         }
-        rockModel.Draw(shader);
+        for (int i = 0; i < grassModels.size(); i++)
+        {
+            grassModels[i].Draw(shader);
+        }
         for (int i = 0; i < rockModels.size(); i++)
         {
             rockModels[i].Draw(shader);
