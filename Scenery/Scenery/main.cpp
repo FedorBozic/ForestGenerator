@@ -140,7 +140,10 @@ int main() {
     string igor = "C:/Users/SI/Documents/GitHub/";
     string fedor = "C:/Users/fedor/OneDrive/Desktop/RG/";
 
-    string currentUser = igor;
+    string currentUser = fedor;
+
+    string str_obj = currentUser + "scenery/Scenery/resources/tree1/tree1.obj";
+    Model treeModel(&str_obj[0]);
 
     string grassTex = currentUser + "scenery/Scenery/resources/tex_grass.png";
     Terrain terrain(perlinResolution, scale, grassTex);
@@ -151,11 +154,9 @@ int main() {
     string str_sun_path = currentUser + "scenery/Scenery/resources/sun/sun.obj";
     Model sunModel(&str_sun_path[0]);
 
-    string str_obj = currentUser + "scenery/Scenery/resources/tree/Tree.obj";
-    Model treeModel(&str_obj[0]);
     //vector<Model> treeModels = getScatteredModelsAcrossSurface(surfaceModel, treeModel, 5);
     Possion possion;
-    list<Point> treePositions = possion.GeneratePossion(scale, scale / 15, scale / 15, 30);
+    list<Point> treePositions = possion.GeneratePossion(scale, 5.0, 5.0, 30);
     vector<Model> treeModels = getTreeModelsFromPositions(terrain, treeModel, treePositions);
 
     string str_sky = currentUser + "scenery/Scenery/resources/sky/sky.obj";
