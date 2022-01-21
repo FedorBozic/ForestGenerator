@@ -100,6 +100,20 @@ vector<Model> getTreeModelsFromPositions(Terrain terrain, Model objectTemplate, 
     return result;
 }
 
+vector<Model> scatterModelsAcrossTerrain(Terrain terrain, vector<Model> templateModels)
+{
+    Possion possion;
+    vector<Model> allScatteredModels;
+    for(int i = 0; i < templateModels.size(); i++)
+    {
+        list<Point> modelPositions = possion.GeneratePossion(scale, 5.0, 5.0, 30);
+        vector<Model> tmpModelList = getTreeModelsFromPositions(terrain, templateModels[i], modelPositions);
+        for (int j = 0; j < tmpModelList.size(); j++)
+            allScatteredModels.push_back(tmpModelList[j]);
+    }
+    return allScatteredModels;
+}
+
 int main() {
     glfwInit();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -163,17 +177,6 @@ int main() {
     string str_sun_path = currentUser + "scenery/Scenery/resources/sun/sun.obj";
     Model sunModel(&str_sun_path[0]);
 
-    //vector<Model> treeModels = getScatteredModelsAcrossSurface(surfaceModel, treeModel, 5);
-    Possion possion;
-    list<Point> treePositions = possion.GeneratePossion(scale, 5.0, 5.0, 30);
-    vector<Model> treeModels = getTreeModelsFromPositions(terrain, treeModel, treePositions);
-    list<Point> flowerPinkPositions = possion.GeneratePossion(scale, 5.0, 5.0, 30);
-    vector<Model> flowerPinkModels = getTreeModelsFromPositions(terrain, flowerModelPink, flowerPinkPositions);
-    list<Point> flowerWhitePositions = possion.GeneratePossion(scale, 5.0, 5.0, 30);
-    vector<Model> flowerWhiteModels = getTreeModelsFromPositions(terrain, flowerModelWhite, flowerWhitePositions);
-    list<Point> grassPositions = possion.GeneratePossion(scale, 5.0, 5.0, 30);
-    vector<Model> grassModels = getTreeModelsFromPositions(terrain, grassModel, grassPositions);
-
     string str_sky = currentUser + "scenery/Scenery/resources/sky/sky.obj";
     Model skyModel(&str_sky[0]);
     skyModel.Scale(1000.0f);
@@ -187,12 +190,12 @@ int main() {
     rockModel.Scale(0.2f);
     vector<Model> rockModels = getScatteredModelsAcrossSurface(surfaceModel, rockModel, 10);
 
-    /*string str_backpack_path = currentUser + "scenery/Scenery/resources/test_backpack/backpack.obj";
-    Model backpackModel(&str_backpack_path[0]);
-    backpackModel.Scale(5.0f);
-    backpackModel.Translate(10.0f, 0.0f, 10.0f);*/
-
-    //poisson_distribution //postoji??
+    vector<Model> allScatterTemplateModels;
+    allScatterTemplateModels.push_back(treeModel);
+    allScatterTemplateModels.push_back(flowerModelPink);
+    allScatterTemplateModels.push_back(flowerModelWhite);
+    allScatterTemplateModels.push_back(grassModel);
+    vector<Model> allScatteredModels = scatterModelsAcrossTerrain(terrain, allScatterTemplateModels);
 
     float lightPosition[3] = { 0.0f, 0.0f, 0.0f };
 
@@ -234,6 +237,14 @@ int main() {
         ImGui::ColorEdit3("color", color);
         ImGui::End();
 
+
+        ImGui::Begin("Terrain Settings");
+        if (ImGui::Button("Regenerate Terrain"))
+        {
+            allScatteredModels = scatterModelsAcrossTerrain(terrain, allScatterTemplateModels);
+        }
+        ImGui::End();
+
         shaderPassthrough.setVec3("lightColor", color[0], color[1], color[2]);
         shaderPassthrough.setVec3("lightPos", lightPosition[0], lightPosition[1], lightPosition[2]);
         shaderPassthrough.setVec3("viewPos", camX, camZ, camY);
@@ -244,21 +255,9 @@ int main() {
         shader.use();
         surfaceModel.Draw(shader);
         treeModel.Draw(shader);
-        for (int i = 0; i < treeModels.size(); i++)
+        for (int i = 0; i < allScatteredModels.size(); i++)
         {
-            treeModels[i].Draw(shader);
-        }
-        for (int i = 0; i < flowerPinkModels.size(); i++)
-        {
-            flowerPinkModels[i].Draw(shader);
-        }
-        for (int i = 0; i < flowerWhiteModels.size(); i++)
-        {
-            flowerWhiteModels[i].Draw(shader);
-        }
-        for (int i = 0; i < grassModels.size(); i++)
-        {
-            grassModels[i].Draw(shader);
+            allScatteredModels[i].Draw(shader);
         }
         for (int i = 0; i < rockModels.size(); i++)
         {
