@@ -50,7 +50,7 @@ Point generateRandomPointAround(Point point, float minDist) {
 }
 
 bool pointInRectangle(Point point, float size) {
-	return point.x >= 0 and point.y >= 0 and point.x <= size and point.y <= size;
+	return point.x > 0 and point.y > 0 and point.x < size and point.y < size;
 }
 
 vector<Point> squareAroundPoint(vector<vector<Point>>& grid, Point gridPoint, int count) {
@@ -84,11 +84,15 @@ bool pointInNeighbourhood(vector<vector<Point>>& grid, Point point, float minDis
 	return false;
 }
 
-Possion::Possion() {
-	cout << "Done" << endl;
+Possion::Possion(unsigned scale, float smoothness, float treshold) {
+	this->scale = scale;
+	this->smoothness = smoothness;
+	this->treshold = treshold;
 }
 
-list<Point> Possion::GeneratePossion(float size, float minDist1, float minDist2, int newPointsCount) {
+list<Point> Possion::generatePossion(float size, float minDist1, float minDist2, int newPointsCount, unsigned seed) {
+	perlin = new PerlinNoise(seed); //for now
+
 	float cellSize = minDist1 / sqrt(2);
 
 	int gridSize = ceil(size / cellSize);
@@ -122,5 +126,30 @@ list<Point> Possion::GeneratePossion(float size, float minDist1, float minDist2,
 			}
 		}
 	}
+	std::list<Point>::iterator it = samplePoints.begin();
+	std::list<Point>::iterator prevIt = samplePoints.begin();
+	while (it != samplePoints.end()) {
+		Point point = *it;
+		float perlinHeight = calculatePerlinValue(point.x, point.y);
+		if (perlinHeight < treshold) {
+			bool first = false;
+			if (it == samplePoints.begin())
+				first = true;
+			samplePoints.erase(it);
+			if (first)
+				it = samplePoints.begin();
+			else
+				it = prevIt;
+		}
+		prevIt = it;
+		advance(it, 1);
+	}
+
 	return samplePoints;
+}
+
+float Possion::calculatePerlinValue(float x, float y) {
+	double xPos = (double)x / (double)(scale * smoothness);
+	double yPos = (double)y / (double)(scale * smoothness);
+	return (float)(perlin->getNoise(xPos * scale, yPos * scale, 0.5));
 }

@@ -9,6 +9,7 @@ Mesh::Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, std:
     this->indices = indices;
     this->textures = textures;
 
+    calculateNormals();
     setupMesh();
 }
 
@@ -60,13 +61,13 @@ void Mesh::Translate(float xCoord, float yCoord, float zCoord)
     setupMesh();
 }
 
-void Mesh::Scale(float scale)
+void Mesh::Scale(float xScale, float yScale, float zScale)
 {
     for (unsigned i = 0; i < vertices.size(); i++)
     {
         glm::vec4 vec(vertices[i].Position.x, vertices[i].Position.y, vertices[i].Position.z, 1.0f);
         glm::mat4 scaleMatrix = glm::mat4(1.0f);
-        scaleMatrix = glm::scale(scaleMatrix, glm::vec3(scale, scale, scale));
+        scaleMatrix = glm::scale(scaleMatrix, glm::vec3(xScale, yScale, zScale));
         vec = scaleMatrix * vec;
 
         vertices[i].Position.x = vec[0];
@@ -76,10 +77,30 @@ void Mesh::Scale(float scale)
     setupMesh();
 }
 
+void Mesh::Scale(float scale)
+{
+    Scale(scale, scale, scale);
+}
+
+void Mesh::Rotate(float xRot, float yRot, float zRot, float angle)
+{
+    for (unsigned i = 0; i < vertices.size(); i++)
+    {
+        glm::vec4 vec(vertices[i].Position.x, vertices[i].Position.y, vertices[i].Position.z, 1.0f);
+        glm::mat4 rotationMatrix = glm::mat4(1.0f);
+        rotationMatrix = glm::rotate(rotationMatrix, angle, glm::vec3(xRot, yRot, zRot));
+        vec = rotationMatrix * vec;
+
+        vertices[i].Position.x = vec[0];
+        vertices[i].Position.y = vec[1];
+        vertices[i].Position.z = vec[2];
+    }
+    setupMesh();
+    calculateNormals();
+}
+
 void Mesh::setupMesh()
 {
-    calculateNormals();
-
     glGenVertexArrays(1, &VAO);
     glGenBuffers(1, &VBO);
     glGenBuffers(1, &EBO);

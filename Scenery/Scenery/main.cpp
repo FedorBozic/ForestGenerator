@@ -30,6 +30,9 @@
 #define ROTATION_SPEED 0.5f
 #define CAMERA_HEIGHT 30.0f
 
+#define SHADOW_WIDTH 1024
+#define SHADOW_HEIGHT 1024
+
 using namespace std;
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height)
@@ -44,12 +47,34 @@ void processInput(GLFWwindow* window)
         glfwSetWindowShouldClose(window, true);
 }
 
-const unsigned seed = 501;
+unsigned seed = 501;
 PerlinNoise perlin(seed);
 float scale = 40;
 float smoothness = 10;
 const int perlinResolution = 32; //256, 32
 float maxHeight = 4;
+
+vector<Model> treeModels;
+vector<Model> rockModels;
+vector<Model> flowerModels;
+
+static float color[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
+
+float camX = 0;
+float camY = 0;
+float camZ = 10;
+
+float lightPosition[3] = { 0.0f, 0.0f, 0.0f };
+
+const float daySpeed = 0.2;
+glm::vec3 lightDir(0.0);
+float lightStrength = 0;
+float dayTime = 0;
+
+int getRandomSeed()
+{
+    return 500 + rand() % 10000;
+}
 
 vector<Model> getScatteredModelsAcrossSurface(Model surface, Model objectTemplate, unsigned int count)
 {
@@ -58,9 +83,9 @@ vector<Model> getScatteredModelsAcrossSurface(Model surface, Model objectTemplat
     {
         Vertex randomVertex = surface.GetRandomVertex();
 
-        Model* newModel = new Model(objectTemplate);
-        newModel->Translate(randomVertex.Position.x, randomVertex.Position.y, randomVertex.Position.z);
-        result.push_back(*newModel);
+        Model newModel(objectTemplate);
+        newModel.Translate(randomVertex.Position.x, randomVertex.Position.y, randomVertex.Position.z);
+        result.push_back(newModel);
     }
     return result;
 }
@@ -75,9 +100,12 @@ vector<Model> getTreeModelsFromPositions(Terrain terrain, Model objectTemplate, 
     {
         Point point = *it;
 
-        Model* newModel = new Model(objectTemplate);
-        newModel->Translate(point.x, terrain.getHeight(point.x, point.y), point.y);
-        result.push_back(*newModel);
+        //Model* newModel = new Model(objectTemplate);
+        Model newModel(objectTemplate);
+        newModel.Scale(0.8 + (float)(rand() % 10000) / 10000 * 0.4);
+        newModel.Rotate(0, 1, 0, ((float)(rand() % 10000)) / 10000 * M_PI * 2);
+        newModel.Translate(point.x, terrain.getHeight(point.x, point.y), point.y);
+        result.push_back(newModel);
         advance(it, 1);
     }
     return result;
@@ -85,16 +113,38 @@ vector<Model> getTreeModelsFromPositions(Terrain terrain, Model objectTemplate, 
 
 vector<Model> scatterModelsAcrossTerrain(Terrain terrain, vector<Model> templateModels)
 {
-    Possion possion;
+    Possion possion(scale, 10, 0);
     vector<Model> allScatteredModels;
-    for(int i = 0; i < templateModels.size(); i++)
+    for (int i = 0; i < templateModels.size(); i++)
     {
-        list<Point> modelPositions = possion.GeneratePossion(scale, 5.0, 5.0, 30);
+        list<Point> modelPositions = possion.generatePossion(scale, 1.5, 1.5, 30, getRandomSeed());
         vector<Model> tmpModelList = getTreeModelsFromPositions(terrain, templateModels[i], modelPositions);
         for (int j = 0; j < tmpModelList.size(); j++)
+        {
             allScatteredModels.push_back(tmpModelList[j]);
+        }
     }
     return allScatteredModels;
+}
+
+void progressDay()
+{
+    float angle = (daySpeed * glfwGetTime());
+    lightDir.x = cos(angle);
+    lightDir.y = sin(angle);
+
+    if (lightDir.y < 0.1 && lightDir.y >= -0.2) {
+        lightStrength = 10 / 3 * lightDir.y + 2 / 3;
+    }
+    else if (lightDir.y < -0.2) {
+        lightStrength = 0;
+    }
+    else lightStrength = 1;
+    //lightDir.x = 1;
+    //lightDir.y = 1;
+    //lightDir.z = 1;
+
+    
 }
 
 int main() {
@@ -117,8 +167,11 @@ int main() {
     }
 
     Shader shader("shader.vs", "shader.fs");
+    //Shader depthShader("depthShader.vs", "depthShader.fs");
+    //Shader shadowmapShader("shadowmapShader.vs", "shadowmapShader.fs");
     Shader sunSurfaceShader("sunShader.vs", "sunShader.fs");
     Shader shaderPassthrough("shaderPassthrough.vs", "shaderPassthrough.fs");
+    //Shader debugDepthQuad("debugDepthQuad.vs", "debugDepthQuad.fs");
     glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
 
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
@@ -137,19 +190,7 @@ int main() {
     string igor = "C:/Users/SI/Documents/GitHub/";
     string fedor = "C:/Users/fedor/OneDrive/Desktop/RG/";
 
-    string currentUser = fedor;
-
-    string tree_path = currentUser + "scenery/Scenery/resources/tree1/tree1.obj";
-    Model treeModel(&tree_path[0]);
-
-    string flower_pink_path = currentUser + "scenery/Scenery/resources/flower1/flower1.obj";
-    Model flowerModelPink(&flower_pink_path[0]);
-    flowerModelPink.Scale(0.1f);
-    string flower_white_path = currentUser + "scenery/Scenery/resources/flower2/flower1.obj";
-    Model flowerModelWhite(&flower_white_path[0]);
-    flowerModelWhite.Scale(0.1f);
-    string grass_path = currentUser + "scenery/Scenery/resources/grass/grass.obj";
-    Model grassModel(&grass_path[0]);
+    string currentUser = igor;
 
     string grassTex = currentUser + "scenery/Scenery/resources/tex_grass.png";
     Terrain terrain(perlinResolution, scale, grassTex);
@@ -159,6 +200,25 @@ int main() {
 
     string str_sun_path = currentUser + "scenery/Scenery/resources/sun/sun.obj";
     Model sunModel(&str_sun_path[0]);
+
+    string grass_path = currentUser + "scenery/Scenery/resources/grass/grass.obj";
+    Model grassModel(&grass_path[0]);
+    //grassModel.Scale(1.0, -1.0, 1.0);
+
+    //string tree_path = currentUser + "scenery/Scenery/resources/tree1/tree1.obj";
+    string tree_path = currentUser + "scenery/Scenery/resources/tree/Tree.obj";
+    Model treeModel(&tree_path[0]);
+    //vector<Model> treeModels = getScatteredModelsAcrossSurface(surfaceModel, treeModel, 5);
+    Possion possion(scale, 10, 0.55);
+    list<Point> treePositions = possion.generatePossion(scale, 2, 2, 30, getRandomSeed());
+    vector<Model> treeModels = getTreeModelsFromPositions(terrain, treeModel, treePositions);
+
+    string flower_pink_path = currentUser + "scenery/Scenery/resources/flower1/flower1.obj";
+    Model flowerModelPink(&flower_pink_path[0]);
+    flowerModelPink.Scale(0.1f);
+    Possion flowerPossion(scale, 10, 0);
+    list<Point> flowerPositions = flowerPossion.generatePossion(scale, 7, 7, 30, getRandomSeed());
+    flowerModels = getTreeModelsFromPositions(terrain, flowerModelPink, flowerPositions);
 
     string str_sky = currentUser + "scenery/Scenery/resources/sky/sky.obj";
     Model skyModel(&str_sky[0]);
@@ -174,11 +234,12 @@ int main() {
     vector<Model> rockModels = getScatteredModelsAcrossSurface(surfaceModel, rockModel, 10);
 
     vector<Model> allScatterTemplateModels;
-    allScatterTemplateModels.push_back(treeModel);
-    allScatterTemplateModels.push_back(flowerModelPink);
-    allScatterTemplateModels.push_back(flowerModelWhite);
+    //allScatterTemplateModels.push_back(treeModel);
+    //allScatterTemplateModels.push_back(flowerModelPink);
     allScatterTemplateModels.push_back(grassModel);
     vector<Model> allScatteredModels = scatterModelsAcrossTerrain(terrain, allScatterTemplateModels);
+
+    Model lightModelTranslated = Model(sunModel);
 
     float lightPosition[3] = { 0.0f, 0.0f, 0.0f };
     float changedScale = scale;
@@ -203,23 +264,24 @@ int main() {
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
 
+        //glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
+        //glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); //Zasto dva puta?
+
         glm::mat4 model = glm::mat4(1.0f);
         glm::mat4 projection = glm::mat4(1.0f);
         glm::mat4 view = glm::mat4(1.0f);
 
         projection = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 10000.0f);
 
-        float camX = scale / 2 + sin(ROTATION_SPEED * glfwGetTime()) * ROTATION_RADIUS;
-        float camZ = scale / 2 + cos(ROTATION_SPEED * glfwGetTime()) * ROTATION_RADIUS;
-        float camY = CAMERA_HEIGHT;
+        camX = scale / 2 + sin(ROTATION_SPEED * glfwGetTime()) * ROTATION_RADIUS;
+        camZ = scale / 2 + cos(ROTATION_SPEED * glfwGetTime()) * ROTATION_RADIUS;
+        camY = CAMERA_HEIGHT;
         view = glm::lookAt(glm::vec3(camX, camY, camZ), glm::vec3(scale / 2, 0.0, scale / 2), glm::vec3(0.0, 1.0, 0.0));
 
-        shaderPassthrough.use();
-        skyModel.Draw(shaderPassthrough);
+        progressDay();
 
         ImGui::Begin("Light Settings");
-        ImGui::SliderFloat3("position", lightPosition, 0.0, 20.0);
-        static float color[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
+        ImGui::SliderFloat3("position", lightPosition, 0.0, scale);
         ImGui::ColorEdit3("color", color);
         ImGui::End();
 
@@ -229,6 +291,7 @@ int main() {
         ImGui::SliderFloat("Max Height", &changedMaxHeight, 0.0, 10.0);
         if (ImGui::Button("Regenerate Terrain"))
         {
+            seed = getRandomSeed();
             scale = changedScale;
             smoothness = changedSmoothness;
             maxHeight = changedMaxHeight;
@@ -236,38 +299,62 @@ int main() {
             Mesh newTerrainMesh = newTerrain.generateTerrain(maxHeight, smoothness, seed);
             Model newSurfaceModel(newTerrainMesh);
             newSurfaceModel.Translate(0.0f, 0.0f, 0.0f);
+            terrain = newTerrain;
             surfaceModel = newSurfaceModel;
             allScatteredModels = scatterModelsAcrossTerrain(terrain, allScatterTemplateModels);
+
+            treePositions = possion.generatePossion(scale, 2, 2, 30, getRandomSeed());
+            treeModels = getTreeModelsFromPositions(terrain, treeModel, treePositions);
+
+            list<Point> rockPositions = possion.generatePossion(scale, 10, 10, 30, getRandomSeed());
+            rockModels = getTreeModelsFromPositions(terrain, rockModel, rockPositions);
+
+            flowerPositions = flowerPossion.generatePossion(scale, 10, 10, 30, getRandomSeed());
+            flowerModels = getTreeModelsFromPositions(terrain, flowerModelPink, flowerPositions);
         }
         ImGui::End();
+        
+        shaderPassthrough.use();
+        skyModel.Draw(shaderPassthrough);
 
         shaderPassthrough.setVec3("lightColor", color[0], color[1], color[2]);
         shaderPassthrough.setVec3("lightPos", lightPosition[0], lightPosition[1], lightPosition[2]);
+        shaderPassthrough.setFloat("lightStrength", lightStrength);
         shaderPassthrough.setVec3("viewPos", camX, camZ, camY);
         shaderPassthrough.setMat4("model", model);
         shaderPassthrough.setMat4("projection", projection);
         shaderPassthrough.setMat4("view", view);
 
+        
         shader.use();
         surfaceModel.Draw(shader);
-        treeModel.Draw(shader);
-        for (int i = 0; i < allScatteredModels.size(); i++)
+        //treeModel.Draw(shader);
+        for (int i = 0; i < treeModels.size(); i++)
         {
-            allScatteredModels[i].Draw(shader);
+            treeModels[i].Draw(shader);
         }
         for (int i = 0; i < rockModels.size(); i++)
         {
             rockModels[i].Draw(shader);
         }
-        
-        //backpackModel.Draw(shader);
 
         shader.setVec3("lightColor", color[0], color[1], color[2]);
         shader.setVec3("lightPos", lightPosition[0], lightPosition[1], lightPosition[2]);
+        shader.setVec3("lightDir", lightDir);
         shader.setVec3("viewPos", camX, camZ, camY);
         shader.setMat4("model", model);
         shader.setMat4("projection", projection);
         shader.setMat4("view", view);
+
+        shaderPassthrough.use();
+        for (int i = 0; i < allScatteredModels.size(); i++)
+        {
+            allScatteredModels[i].Draw(shader);
+        }
+        for (int i = 0; i < flowerModels.size(); i++)
+        {
+            flowerModels[i].Draw(shader);
+        }
 
         sunSurfaceShader.use();
         sunSurfaceShader.setVec3("lightColor", color[0], color[1], color[2]);
@@ -276,8 +363,8 @@ int main() {
         sunSurfaceShader.setMat4("view", view);
         sunSurfaceShader.setMat4("model", model);
 
-        Model lightModelTranslated = Model(sunModel);
-        lightModelTranslated.Translate(lightPosition[0], lightPosition[1], lightPosition[2]);
+        
+        //lightModelTranslated.Translate(lightPosition[0], lightPosition[1], lightPosition[2]);
         lightModelTranslated.Draw(sunSurfaceShader);
 
         ImGui::Render();

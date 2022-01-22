@@ -10,9 +10,12 @@ uniform sampler2D texture_specular;
 uniform vec3 lightPos;
 uniform vec3 viewPos;
 uniform vec3 lightColor;
+uniform float lightStrength;
 
 void main()
 {
+    if(texture(texture_diffuse, TexCoords).a < 0.5)
+         discard;
    float ambientStrength = 0.2;
    vec3 ambient = ambientStrength * lightColor * texture(texture_diffuse, TexCoords).rgb;
 
@@ -31,5 +34,7 @@ void main()
 
    vec3 result = ambient + diffuse + specular;
    FragColor = vec4(result, texture(texture_diffuse, TexCoords).a);
-   FragColor = texture(texture_diffuse, TexCoords);
+   
+   vec4 diffTex = texture(texture_diffuse, TexCoords);
+   FragColor = vec4(diffTex.rgb * lightColor * lightStrength, diffTex.a);
 };

@@ -160,6 +160,18 @@ void Model::Scale(float scale)
         meshes[i].Scale(scale);
 }
 
+void Model::Scale(float xScale, float yScale, float zScale)
+{
+    for (int i = 0; i < meshes.size(); i++)
+        meshes[i].Scale(xScale, yScale, zScale);
+}
+
+void Model::Rotate(float xRot, float yRot, float zRot, float angle)
+{
+    for (int i = 0; i < meshes.size(); i++)
+        meshes[i].Rotate(xRot, yRot, zRot, angle);
+}
+
 void Model::RemoveSurfacePlanes()
 {
     for (int i = 0; i < meshes.size(); i++)

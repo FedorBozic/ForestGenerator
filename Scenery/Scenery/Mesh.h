@@ -43,6 +43,8 @@ class Mesh
 
         void Translate(float xCoord, float yCoord, float zCoord);
         void Scale(float scale);
+        void Scale(float xScale, float yScale, float zScale);
+        void Rotate(float xRot, float yRot, float zRot, float angle);
     private:
         unsigned int VAO, VBO, EBO;
 

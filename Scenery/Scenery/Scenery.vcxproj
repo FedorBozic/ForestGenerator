@@ -145,11 +145,19 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <None Include="debugDepthQuad.fs" />
+    <None Include="debugDepthQuad.vs" />
+    <None Include="depthShader.fs" />
+    <None Include="depthShader.vs" />
     <None Include="packages.config" />
     <None Include="shader.fs" />
     <None Include="shader.vs" />
     <None Include="shaderPassthrough.fs" />
     <None Include="shaderPassthrough.vs" />
+    <None Include="shadowmapShader.fs" />
+    <None Include="shadowmapShader.vs" />
+    <None Include="skyShader.fs" />
+    <None Include="skyShader.vs" />
     <None Include="sunShader.fs" />
     <None Include="sunShader.vs" />
   </ItemGroup>

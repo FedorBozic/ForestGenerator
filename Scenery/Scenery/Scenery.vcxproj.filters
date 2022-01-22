@@ -22,6 +22,14 @@
     <None Include="sunShader.fs" />
     <None Include="shaderPassthrough.fs" />
     <None Include="shaderPassthrough.vs" />
+    <None Include="depthShader.vs" />
+    <None Include="depthShader.fs" />
+    <None Include="shadowmapShader.fs" />
+    <None Include="shadowmapShader.vs" />
+    <None Include="debugDepthQuad.fs" />
+    <None Include="debugDepthQuad.vs" />
+    <None Include="skyShader.vs" />
+    <None Include="skyShader.fs" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="glad.c">
